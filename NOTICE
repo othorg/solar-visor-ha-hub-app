@@ -1,0 +1,10 @@
+Solar Visor Hub
+Copyright 2025-2026 othorg
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party components (installed as Python and npm dependencies, not included in this repository) remain under their
+own licenses, among them FastAPI, Pydantic, Uvicorn, HTTPX, websockets, segno, pye3dc and py3rijndael (MIT/BSD) for
+the hub, and React and Vite (MIT) for the web interface.
+
+Solar Visor is an independent project. It is not affiliated with Home Assistant, E3/DC, KOSTAL, openWB or OTRKY.

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:                 # the release runs the same checks on the tagged commit first
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: astral-sh/setup-uv@v6
+      - name: Web interface – type check and tests
+        working-directory: web
+        run: npm ci --no-audit --no-fund && npm run typecheck && npm test
+      - name: Hub – tests
+        working-directory: hub
+        run: uv sync --frozen && uv run pytest -q
+      - name: Image builds and starts (setup mode, health check)
+        run: |
+          scripts/build-context.sh build/context
+          docker build -t solar-visor-hub:ci build/context
+          docker run -d --name sv -e SUPERVISOR_TOKEN=ci -p 127.0.0.1:18080:8080 solar-visor-hub:ci
+          for i in $(seq 1 30); do curl -fs http://127.0.0.1:18080/health/live >/dev/null && break; sleep 1; done
+          curl -fs http://127.0.0.1:18080/health/live
+          docker logs sv 2>&1 | grep -q "Solar Visor hub"
+          docker rm -f sv

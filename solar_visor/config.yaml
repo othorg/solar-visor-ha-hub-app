@@ -1,0 +1,29 @@
+# Home Assistant app (formerly add-on) of the Solar Visor hub. Images: .github/workflows/release.yml
+name: Solar Visor Hub
+version: "0.2.0"
+slug: solar_visor
+url: https://github.com/othorg/solar-visor-ha-hub-app
+image: ghcr.io/othorg/{arch}-solar-visor-hub
+description: Read-only hub for the Solar Visor apps (iPhone, Mac, Apple Watch)
+arch:
+  - amd64
+  - aarch64
+init: false
+homeassistant_api: true
+# both API ports are off by default – only the Solar Visor apps need them (switch on under Network)
+ports:
+  8080/tcp: null
+  8081/tcp: null
+# web interface in the Home Assistant sidebar: only the Supervisor's Ingress proxy reaches this port, and HA lets
+# administrators only through; the hub checks both again (ui.py)
+ingress: true
+ingress_port: 8099
+panel_admin: true
+panel_icon: mdi:solar-power-variant
+panel_title: Solar Visor
+# the hub keeps SQLite databases in WAL mode: a backup of the running files could pair a database with a journal of
+# another moment, so the Supervisor stops the add-on for the backup (a gap of seconds in the live observations)
+backup: cold
+# no add-on options: the whole setup (plant, sensors, InfluxDB, E3/DC, pairing) happens in the web interface; Home
+# Assistant's configuration tab shows only the network ports. The hub takes former InfluxDB
+# options over once (influx_config.py).

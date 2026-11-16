@@ -1,0 +1,608 @@
+/* Close to Home Assistant's look (cards, spacing), light and dark after the system setting; usable with a keyboard
+   (visible focus) and on a phone (HA companion app). */
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #1c1f24;
+  --muted: #5f6670;
+  --line: #dde1e6;
+  --accent: #0b7fc7;
+  --accent-text: #ffffff;
+  --error: #b3261e;
+  --ok: #1b7f3b;
+  --radius: 12px;
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --card: #1c2026;
+    --text: #e8eaed;
+    --muted: #9aa2ad;
+    --line: #2e343c;
+    --accent: #47a8e8;
+    --accent-text: #0b1117;
+    --error: #f2b8b5;
+    --ok: #7fd49a;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  /* Own compositing layer (verified on iPhone, iOS 27.2, 2026-11-16): Home Assistant fades the Ingress iframe in
+     (opacity 0 → 1, 0.25 s) at its load event, and React renders right into that fade – WebKit in the HA iOS app then
+     drops those tiles and repaints only what changes later (an empty page with a few values). In a layer of its own
+     the content survives. `opacity`, not `transform`: no containing block for the fixed dialog backdrop. */
+  will-change: opacity;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.top h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs a {
+  padding: 8px 12px;
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a[aria-current="page"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.card h2 {
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.hint,
+.note,
+small {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.form label {
+  display: grid;
+  gap: 4px;
+}
+
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input,
+select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- plant editing ---------------------------------------------------------------------------------------------- */
+.toolbar p {
+  margin: 4px 0;
+}
+
+.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--line);
+}
+
+.plain {
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 8px;
+}
+
+.ok {
+  color: var(--ok);
+}
+
+.warn {
+  color: var(--error);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.module.off {
+  opacity: 0.75;
+}
+
+.module-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.module-head small {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.switch,
+.radio,
+.inline {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+fieldset {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.point {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.point-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.point-label small {
+  color: var(--muted);
+}
+
+.point-body {
+  display: grid;
+  gap: 6px;
+}
+
+.sensor {
+  display: grid;
+}
+
+.chip {
+  font-size: 0.8em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+.chip.ok {
+  color: var(--ok);
+}
+
+.chip.info {
+  color: var(--accent);
+}
+
+.chip.warning {
+  color: #b26a00;
+}
+
+.chip.error {
+  color: var(--error);
+}
+
+.codes,
+.problems {
+  margin: 0;
+  padding-left: 18px;
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--accent);
+  margin: 4px 0;
+}
+
+/* --- sensor picker ------------------------------------------------------------------------------------------------ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px 12px;
+  z-index: 10;
+}
+
+.dialog {
+  background: var(--card);
+  border-radius: var(--radius);
+  width: min(720px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog-head h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.hits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.hit {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.hit-main,
+.hit-side {
+  display: grid;
+}
+
+.hit-side {
+  text-align: right;
+}
+
+textarea {
+  font: inherit;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: inherit;
+}
+
+.code {
+  font-size: 1.4rem;
+  letter-spacing: 0.1em;
+}
+
+.string {
+  margin: 8px 0;
+  display: grid;
+  gap: 8px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.points-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.points-table th,
+.points-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.points-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* narrow screens (phone, HA companion app; same width as NARROW in common.tsx): a little less padding */
+@media (max-width: 720px) {
+  .app {
+    padding: 12px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
+
+/* data points on narrow screens: grouped by module, one compact block per point (PointsSection) */
+.point-groups {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.point-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.point-group-head h3 {
+  margin: 0;
+}
+
+.point-group-head a {
+  color: var(--accent);
+}
+
+.point-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.point-row {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.point-row:last-child {
+  border-bottom: 0;
+}
+
+.point-row-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.point-row-line > :first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.point-row-value {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.point-row .mono {
+  font-size: 0.8em;
+}
+
+.point-row .codes {
+  font-size: 0.9em;
+  margin-top: 2px;
+}
+
+.facts .fact-row {
+  display: contents;
+}
+
+.qr {
+  width: 200px;
+  height: 200px;
+  image-rendering: pixelated;
+  background: #fff;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.devices {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.devices li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.danger {
+  background: var(--error);
+  color: var(--card);
+}
+
+a.button,
+label.button {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 12px 0 4px;
+}
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  margin: 8px 0 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.stepper li {
+  counter-increment: step;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.stepper li::before {
+  content: counter(step) ". ";
+}
+
+.stepper li[aria-current="step"] {
+  border-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.stepper li.done {
+  color: var(--ok);
+}
+
+/* narrow screens (HA companion app): long option texts and entity ids must not widen the page */
+.form,
+.point-body,
+.string {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.form label,
+.point {
+  min-width: 0;
+}
+
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+.form select,
+.form input:not([type="checkbox"]):not([type="radio"]):not([type="date"]) {
+  width: 100%;
+}
+
+.inline select {
+  min-width: 0;
+  flex: 1;
+}

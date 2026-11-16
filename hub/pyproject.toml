@@ -1,0 +1,35 @@
+[project]
+name = "solar-visor-hub"
+version = "0.2.0"
+description = "Read-only hub for Solar Visor (Home Assistant + InfluxDB → iOS/watchOS)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.142.2",
+    "httpx==0.28.1",
+    "pydantic==2.13.5",
+    "pye3dc==0.10.0",                # RSCP payload encoding/parsing (read-only use, guarded) – rscp.py
+    "py3rijndael==0.3.3",
+    "uvicorn==0.54.0",
+    "websockets==17.2",
+    "segno==1.6.6",                  # QR code of the pairing text (pure Python) – ui.py, cli.py
+]
+
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/solar_visor_hub"]
+# the built web interface (web/ → npm run build) is not versioned but belongs into the package
+artifacts = ["src/solar_visor_hub/web/**"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+]

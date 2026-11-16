@@ -1,0 +1,6776 @@
+{
+  "components": {
+    "schemas": {
+      "Allocation": {
+        "enum": [
+          "observed",
+          "time_allocated",
+          "unresolved"
+        ],
+        "title": "Allocation",
+        "type": "string"
+      },
+      "AvailabilityInterval": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "state"
+        ],
+        "title": "AvailabilityInterval",
+        "type": "object"
+      },
+      "AvailabilityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "journal_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Since"
+          },
+          "monitoring_gaps": {
+            "description": "hub not running: state unknown",
+            "items": {
+              "$ref": "#/components/schemas/TimeInterval"
+            },
+            "title": "Monitoring Gaps",
+            "type": "array"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/AvailabilitySeries"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "series"
+        ],
+        "title": "AvailabilityResponse",
+        "type": "object"
+      },
+      "AvailabilitySeries": {
+        "additionalProperties": false,
+        "properties": {
+          "intervals": {
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityInterval"
+            },
+            "title": "Intervals",
+            "type": "array"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric_id",
+          "intervals"
+        ],
+        "title": "AvailabilitySeries",
+        "type": "object"
+      },
+      "BalanceProfile": {
+        "enum": [
+          "e3dc_balance",
+          "kostal_ac_comparison"
+        ],
+        "title": "BalanceProfile",
+        "type": "string"
+      },
+      "Capabilities": {
+        "additionalProperties": false,
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "balance_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceProfile"
+            },
+            "title": "Balance Profiles",
+            "type": "array"
+          },
+          "compare": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompareCapabilities"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "components": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "consumers": {
+            "default": false,
+            "title": "Consumers",
+            "type": "boolean"
+          },
+          "e3dc_strings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "E3Dc Strings",
+            "type": "object"
+          },
+          "hub_version": {
+            "title": "Hub Version",
+            "type": "string"
+          },
+          "kostal_strings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Kostal Strings",
+            "type": "object"
+          },
+          "max_energy_range": {
+            "default": "1 calendar year",
+            "title": "Max Energy Range",
+            "type": "string"
+          },
+          "max_points_per_series": {
+            "default": 2000,
+            "title": "Max Points Per Series",
+            "type": "integer"
+          },
+          "max_power_range_days": {
+            "default": 31,
+            "title": "Max Power Range Days",
+            "type": "integer"
+          },
+          "max_series_per_request": {
+            "default": 16,
+            "title": "Max Series Per Request",
+            "type": "integer"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "rscp": {
+            "default": false,
+            "title": "Rscp",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "api_version",
+          "hub_version",
+          "components",
+          "metrics",
+          "balance_profiles"
+        ],
+        "title": "Capabilities",
+        "type": "object"
+      },
+      "CompareAxisPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "a_days": {
+            "default": 0,
+            "title": "A Days",
+            "type": "integer"
+          },
+          "a_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "A End"
+          },
+          "a_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "A Start"
+          },
+          "b_days": {
+            "default": 0,
+            "title": "B Days",
+            "type": "integer"
+          },
+          "b_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "B End"
+          },
+          "b_start": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "B Start"
+          },
+          "key": {
+            "description": "day 'HH:MM' ('HH:MM#2' second occurrence on the 25-h day), week ISO weekday '1'–'7', month day '1'–'31', year month '1'–'12', range day index '1'… or block 'B1'…",
+            "title": "Key",
+            "type": "string"
+          },
+          "provisional_a": {
+            "default": false,
+            "title": "Provisional A",
+            "type": "boolean"
+          },
+          "provisional_b": {
+            "default": false,
+            "title": "Provisional B",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "title": "CompareAxisPoint",
+        "type": "object"
+      },
+      "CompareBasis": {
+        "enum": [
+          "aligned",
+          "totals",
+          "per_day"
+        ],
+        "title": "CompareBasis",
+        "type": "string"
+      },
+      "CompareBasisOption": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/CompareBasis"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "basis",
+          "available"
+        ],
+        "title": "CompareBasisOption",
+        "type": "object"
+      },
+      "CompareCapabilities": {
+        "additionalProperties": false,
+        "properties": {
+          "bases": {
+            "items": {
+              "$ref": "#/components/schemas/CompareBasis"
+            },
+            "title": "Bases",
+            "type": "array"
+          },
+          "data_since": {
+            "format": "date",
+            "title": "Data Since",
+            "type": "string"
+          },
+          "kinds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Kinds",
+            "type": "array"
+          },
+          "max_days": {
+            "title": "Max Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kinds",
+          "bases",
+          "max_days",
+          "data_since"
+        ],
+        "title": "CompareCapabilities",
+        "type": "object"
+      },
+      "CompareDelta": {
+        "additionalProperties": false,
+        "properties": {
+          "abs": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A − B in the unit of the values (ratios: percentage points); null when not reliable",
+            "title": "Abs"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "missing | gaps | refreshing | reference_zero | negative_value",
+            "title": "Reason"
+          },
+          "rel_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "100 · (A − B) / B, energy only, B > 0",
+            "title": "Rel Pct"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/CompareTier"
+          }
+        },
+        "required": [
+          "abs",
+          "tier"
+        ],
+        "title": "CompareDelta",
+        "type": "object"
+      },
+      "CompareExclusion": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "reason": {
+            "description": "no_partner | beyond_common_length | dst_missing_hour | dst_repeated_hour | after_cut",
+            "title": "Reason",
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "a",
+              "b"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "side",
+          "start",
+          "end",
+          "reason"
+        ],
+        "title": "CompareExclusion",
+        "type": "object"
+      },
+      "CompareMetric": {
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/CompareValue"
+          },
+          "b": {
+            "$ref": "#/components/schemas/CompareValue"
+          },
+          "comparability": {
+            "enum": [
+              "comparable",
+              "limited"
+            ],
+            "title": "Comparability",
+            "type": "string"
+          },
+          "comparability_reasons": {
+            "description": "plant event ids, 'reconstructed'",
+            "items": {
+              "type": "string"
+            },
+            "title": "Comparability Reasons",
+            "type": "array"
+          },
+          "delta": {
+            "$ref": "#/components/schemas/CompareDelta"
+          },
+          "kind": {
+            "enum": [
+              "energy",
+              "ratio"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "per_day_a": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompareValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "per_day_b": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompareValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "series": {
+            "$ref": "#/components/schemas/CompareSeries"
+          },
+          "supplementary": {
+            "default": false,
+            "description": "only for the data basis sheet (E3/DC grid values when the grid meters of the periods differ)",
+            "title": "Supplementary",
+            "type": "boolean"
+          },
+          "totals_a": {
+            "$ref": "#/components/schemas/CompareValue",
+            "description": "actual sum of period A (running: so far)"
+          },
+          "totals_b": {
+            "$ref": "#/components/schemas/CompareValue"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "metric_id",
+          "kind",
+          "unit",
+          "a",
+          "b",
+          "delta",
+          "comparability",
+          "totals_a",
+          "totals_b",
+          "series"
+        ],
+        "title": "CompareMetric",
+        "type": "object"
+      },
+      "CompareNote": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "At"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "metrics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "side": {
+            "anyOf": [
+              {
+                "enum": [
+                  "a",
+                  "b"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Side"
+          },
+          "until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Until"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "title": "CompareNote",
+        "type": "object"
+      },
+      "CompareSeries": {
+        "additionalProperties": false,
+        "description": "Per axis position (parallel arrays).",
+        "properties": {
+          "a": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "A",
+            "type": "array"
+          },
+          "b": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "B",
+            "type": "array"
+          },
+          "coverage_a": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage A",
+            "type": "array"
+          },
+          "coverage_b": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage B",
+            "type": "array"
+          },
+          "delta": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Delta",
+            "type": "array"
+          },
+          "tier": {
+            "items": {
+              "$ref": "#/components/schemas/CompareTier"
+            },
+            "title": "Tier",
+            "type": "array"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "coverage_a",
+          "coverage_b",
+          "tier",
+          "delta"
+        ],
+        "title": "CompareSeries",
+        "type": "object"
+      },
+      "CompareSide": {
+        "additionalProperties": false,
+        "properties": {
+          "complete_days": {
+            "title": "Complete Days",
+            "type": "integer"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "end_day": {
+            "description": "exclusive",
+            "format": "date",
+            "title": "End Day",
+            "type": "string"
+          },
+          "first_day": {
+            "format": "date",
+            "title": "First Day",
+            "type": "string"
+          },
+          "grid_source": {
+            "title": "Grid Source",
+            "type": "string"
+          },
+          "running": {
+            "title": "Running",
+            "type": "boolean"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "first_day",
+          "end_day",
+          "start",
+          "end",
+          "days",
+          "complete_days",
+          "running",
+          "grid_source"
+        ],
+        "title": "CompareSide",
+        "type": "object"
+      },
+      "CompareTier": {
+        "enum": [
+          "reliable",
+          "unchanged",
+          "limited",
+          "not_reliable"
+        ],
+        "title": "CompareTier",
+        "type": "string"
+      },
+      "CompareValue": {
+        "additionalProperties": false,
+        "properties": {
+          "complete": {
+            "default": false,
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "coverage": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "covered / expected seconds; solar measures: daylight seconds only",
+            "title": "Coverage"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "why the value is null: no_data | no_daylight_data | no_source | zero_denominator | no_window",
+            "title": "Reason"
+          },
+          "reconstructed": {
+            "default": false,
+            "title": "Reconstructed",
+            "type": "boolean"
+          },
+          "unresolved_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "upper bound of the unresolved energy (energy only)",
+            "title": "Unresolved Wh"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Wh (per_day: Wh per day) or % for ratios; null = unknown, never 0",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "CompareValue",
+        "type": "object"
+      },
+      "Confidence": {
+        "enum": [
+          "observed",
+          "reconstructed",
+          "assumed"
+        ],
+        "title": "Confidence",
+        "type": "string"
+      },
+      "ConfigView": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_metrics": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Derived Metrics",
+            "type": "array"
+          },
+          "e3dc_strings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "E3Dc Strings",
+            "type": "object"
+          },
+          "kostal_strings": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Kostal Strings",
+            "type": "object"
+          },
+          "mapping_revision": {
+            "title": "Mapping Revision",
+            "type": "integer"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricConfig"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceConfigView"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "mapping_revision",
+          "sources",
+          "metrics",
+          "derived_metrics"
+        ],
+        "title": "ConfigView",
+        "type": "object"
+      },
+      "ConsumersRest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "total_unknown | total_incomplete | sum_exceeds_total | within_tolerance | no_statistics",
+            "title": "Reason"
+          },
+          "unmeasured": {
+            "default": 0,
+            "description": "consumers without a value – their consumption is in the rest",
+            "title": "Unmeasured",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "consumption − Σ measured consumers (HA's untracked consumption)",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "ConsumersRest",
+        "type": "object"
+      },
+      "Diagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "ha_connected": {
+            "title": "Ha Connected",
+            "type": "boolean"
+          },
+          "ha_disconnected_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ha Disconnected Since"
+          },
+          "hub_version": {
+            "title": "Hub Version",
+            "type": "string"
+          },
+          "journal": {
+            "items": {
+              "$ref": "#/components/schemas/JournalItem"
+            },
+            "title": "Journal",
+            "type": "array"
+          },
+          "mapping_revision": {
+            "title": "Mapping Revision",
+            "type": "integer"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/MetricProblem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceDiagnostics"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "wallbox_trust": {
+            "$ref": "#/components/schemas/WallboxTrust"
+          }
+        },
+        "required": [
+          "hub_version",
+          "generated_at",
+          "ha_connected",
+          "mapping_revision",
+          "sources",
+          "problems",
+          "wallbox_trust"
+        ],
+        "title": "Diagnostics",
+        "type": "object"
+      },
+      "EnergyBucket": {
+        "additionalProperties": false,
+        "properties": {
+          "allocation": {
+            "$ref": "#/components/schemas/Allocation",
+            "default": "observed"
+          },
+          "balance_profile": {
+            "$ref": "#/components/schemas/BalanceProfile",
+            "default": "e3dc_balance"
+          },
+          "calculation_version": {
+            "default": 1,
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "coverage_fraction": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage Fraction",
+            "type": "number"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "energy_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Wh"
+          },
+          "local_label": {
+            "description": "Local key of the bucket: day 'HH:MM', week 6-h block 'YYYY-MM-DDTHH:00', month 'YYYY-MM-DD', year ISO week 'YYYY-Www' (edge weeks cut at the year)",
+            "title": "Local Label",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/EnergyMethod"
+          },
+          "provisional": {
+            "default": false,
+            "title": "Provisional",
+            "type": "boolean"
+          },
+          "quality_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quality Reasons",
+            "type": "array"
+          },
+          "source_resolution_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Resolution S"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "unresolved_wh_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Upper bound of unresolved share",
+            "title": "Unresolved Wh Max"
+          },
+          "utc_offset_minutes": {
+            "title": "Utc Offset Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "local_label",
+          "utc_offset_minutes",
+          "energy_wh",
+          "method",
+          "coverage_fraction",
+          "complete"
+        ],
+        "title": "EnergyBucket",
+        "type": "object"
+      },
+      "EnergyComparison": {
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/CompareSide"
+          },
+          "aligned_end_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "running: end of the last paired section of A (what 'same point' means; a day without partner is not included)",
+            "title": "Aligned End A"
+          },
+          "aligned_end_b": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aligned End B"
+          },
+          "available_bases": {
+            "items": {
+              "$ref": "#/components/schemas/CompareBasisOption"
+            },
+            "title": "Available Bases",
+            "type": "array"
+          },
+          "axis": {
+            "items": {
+              "$ref": "#/components/schemas/CompareAxisPoint"
+            },
+            "title": "Axis",
+            "type": "array"
+          },
+          "b": {
+            "$ref": "#/components/schemas/CompareSide"
+          },
+          "balance_profile": {
+            "$ref": "#/components/schemas/BalanceProfile"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/CompareBasis"
+          },
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "cut": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "common cut of running periods (exclusive)",
+            "title": "Cut"
+          },
+          "default_basis": {
+            "$ref": "#/components/schemas/CompareBasis"
+          },
+          "excluded": {
+            "items": {
+              "$ref": "#/components/schemas/CompareExclusion"
+            },
+            "title": "Excluded",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "day",
+              "week",
+              "month",
+              "year",
+              "range"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/CompareMetric"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "no_window": {
+            "description": "a running comparison without any elapsed paired section yet",
+            "title": "No Window",
+            "type": "boolean"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/CompareNote"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "refreshing": {
+            "default": false,
+            "title": "Refreshing",
+            "type": "boolean"
+          },
+          "timezone": {
+            "default": "Europe/Berlin",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "basis",
+          "default_basis",
+          "available_bases",
+          "balance_profile",
+          "calculation_version",
+          "generated_at",
+          "cut",
+          "no_window",
+          "a",
+          "b",
+          "axis",
+          "metrics",
+          "excluded",
+          "notes"
+        ],
+        "title": "EnergyComparison",
+        "type": "object"
+      },
+      "EnergyKpis": {
+        "additionalProperties": false,
+        "properties": {
+          "autarky_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Coverage"
+          },
+          "autarky_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Pct"
+          },
+          "balance_residual_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Residual Wh"
+          },
+          "consumption_ring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnergyRing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "direct_consumption_side_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Consumption Side Wh"
+          },
+          "direct_generation_side_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Generation Side Wh"
+          },
+          "e3dc_balance_residual_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E3Dc Balance Residual Wh"
+          },
+          "generation_ring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnergyRing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "residual_warning": {
+            "title": "Residual Warning",
+            "type": "boolean"
+          },
+          "self_consumption_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Coverage"
+          },
+          "self_consumption_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Pct"
+          }
+        },
+        "required": [
+          "autarky_pct",
+          "self_consumption_pct",
+          "direct_generation_side_wh",
+          "direct_consumption_side_wh",
+          "balance_residual_wh",
+          "residual_warning"
+        ],
+        "title": "EnergyKpis",
+        "type": "object"
+      },
+      "EnergyMethod": {
+        "enum": [
+          "counter_delta",
+          "sample_hold"
+        ],
+        "title": "EnergyMethod",
+        "type": "string"
+      },
+      "EnergyPeriod": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_profile": {
+            "$ref": "#/components/schemas/BalanceProfile"
+          },
+          "buckets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/EnergyBucket"
+              },
+              "type": "array"
+            },
+            "title": "Buckets",
+            "type": "object"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/EnergyKpis"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "refreshing": {
+            "default": false,
+            "title": "Refreshing",
+            "type": "boolean"
+          },
+          "timezone": {
+            "default": "Europe/Berlin",
+            "title": "Timezone",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/EnergyTotals"
+          }
+        },
+        "required": [
+          "period",
+          "local_date",
+          "balance_profile",
+          "buckets",
+          "totals",
+          "kpis",
+          "complete"
+        ],
+        "title": "EnergyPeriod",
+        "type": "object"
+      },
+      "EnergyRing": {
+        "additionalProperties": false,
+        "description": "Allocation of the period totals (plan §3.5): generation = direct + battery charge + export, or\nconsumption = direct + battery discharge + import. The client renders, it does not re-derive rules.",
+        "properties": {
+          "battery_wh": {
+            "title": "Battery Wh",
+            "type": "number"
+          },
+          "coverage": {
+            "description": "guaranteed joint coverage of all ring inputs",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "type": "number"
+          },
+          "direct_raw_wh": {
+            "title": "Direct Raw Wh",
+            "type": "number"
+          },
+          "direct_wh": {
+            "title": "Direct Wh",
+            "type": "number"
+          },
+          "grid_wh": {
+            "title": "Grid Wh",
+            "type": "number"
+          },
+          "state": {
+            "$ref": "#/components/schemas/RingState"
+          },
+          "threshold_wh": {
+            "title": "Threshold Wh",
+            "type": "number"
+          },
+          "total_wh": {
+            "title": "Total Wh",
+            "type": "number"
+          }
+        },
+        "required": [
+          "state",
+          "total_wh",
+          "direct_wh",
+          "direct_raw_wh",
+          "battery_wh",
+          "grid_wh",
+          "coverage",
+          "threshold_wh"
+        ],
+        "title": "EnergyRing",
+        "type": "object"
+      },
+      "EnergyTotals": {
+        "additionalProperties": false,
+        "properties": {
+          "battery_charge_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battery Charge Wh"
+          },
+          "battery_discharge_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battery Discharge Wh"
+          },
+          "consumption_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumption Wh"
+          },
+          "coverage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage",
+            "type": "object"
+          },
+          "external_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Wh"
+          },
+          "generation_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Wh"
+          },
+          "grid_export_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grid Export Wh"
+          },
+          "grid_import_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grid Import Wh"
+          },
+          "grid_source": {
+            "description": "e.g. 'iometer' or 'e3dc' (epoch-dependent)",
+            "title": "Grid Source",
+            "type": "string"
+          },
+          "home_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Wh"
+          },
+          "pv_internal_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pv Internal Wh"
+          },
+          "unresolved_wh_max": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Unresolved Wh Max",
+            "type": "object"
+          },
+          "wallbox_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wallbox Wh"
+          }
+        },
+        "required": [
+          "pv_internal_wh",
+          "external_wh",
+          "generation_wh",
+          "consumption_wh",
+          "wallbox_wh",
+          "home_wh",
+          "battery_charge_wh",
+          "battery_discharge_wh",
+          "grid_import_wh",
+          "grid_export_wh",
+          "grid_source"
+        ],
+        "title": "EnergyTotals",
+        "type": "object"
+      },
+      "FlowEdge": {
+        "additionalProperties": false,
+        "description": "Bus-model edge; ``power_w`` is signed relative to the edge's positive direction.",
+        "properties": {
+          "derived": {
+            "default": false,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "edge_id": {
+            "title": "Edge Id",
+            "type": "string"
+          },
+          "from_node": {
+            "title": "From Node",
+            "type": "string"
+          },
+          "power_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power W"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          },
+          "to_node": {
+            "title": "To Node",
+            "type": "string"
+          }
+        },
+        "required": [
+          "edge_id",
+          "from_node",
+          "to_node",
+          "power_w",
+          "state"
+        ],
+        "title": "FlowEdge",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HomeConsumer": {
+        "additionalProperties": false,
+        "properties": {
+          "consumer_id": {
+            "description": "HA energy statistic of the consumer (stable identity)",
+            "title": "Consumer Id",
+            "type": "string"
+          },
+          "energy_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "no_statistics | counter_reset | incomplete",
+            "title": "Energy Reason"
+          },
+          "energy_today_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "today up to stats_until; null = unknown",
+            "title": "Energy Today Wh"
+          },
+          "kind": {
+            "enum": [
+              "device",
+              "wallbox",
+              "womo"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "power_reported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Reported At"
+          },
+          "power_state": {
+            "description": "assumed: untrusted wallbox shown as 0 W like the dashboard (user decision 2026-10-05)",
+            "enum": [
+              "ok",
+              "stale",
+              "unknown",
+              "assumed"
+            ],
+            "title": "Power State",
+            "type": "string"
+          },
+          "power_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "now; null = unknown, never 0",
+            "title": "Power W"
+          }
+        },
+        "required": [
+          "consumer_id",
+          "name",
+          "kind",
+          "power_w",
+          "power_state",
+          "energy_today_wh"
+        ],
+        "title": "HomeConsumer",
+        "type": "object"
+      },
+      "HomeConsumers": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "consumers": {
+            "items": {
+              "$ref": "#/components/schemas/HomeConsumer"
+            },
+            "title": "Consumers",
+            "type": "array"
+          },
+          "consumption_today_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "energy engine, same period as the statistics",
+            "title": "Consumption Today Wh"
+          },
+          "consumption_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumption W"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "local_date": {
+            "format": "date",
+            "title": "Local Date",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ha_disconnected | no_catalog | not_configured",
+            "title": "Reason"
+          },
+          "stats_from": {
+            "format": "date-time",
+            "title": "Stats From",
+            "type": "string"
+          },
+          "stats_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "common end of the hourly HA statistics of today",
+            "title": "Stats Until"
+          },
+          "untracked_energy": {
+            "$ref": "#/components/schemas/ConsumersRest"
+          },
+          "untracked_power": {
+            "$ref": "#/components/schemas/ConsumersRest"
+          }
+        },
+        "required": [
+          "available",
+          "generated_at",
+          "local_date",
+          "stats_from",
+          "stats_until",
+          "consumption_w",
+          "consumption_today_wh",
+          "consumers",
+          "untracked_power",
+          "untracked_energy"
+        ],
+        "title": "HomeConsumers",
+        "type": "object"
+      },
+      "JobStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          },
+          "progress": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Progress",
+            "type": "number"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "state",
+          "progress"
+        ],
+        "title": "JobStatus",
+        "type": "object"
+      },
+      "JournalItem": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "kind",
+          "subject"
+        ],
+        "title": "JournalItem",
+        "type": "object"
+      },
+      "MetricConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "counter": {
+            "default": false,
+            "title": "Counter",
+            "type": "boolean"
+          },
+          "entity": {
+            "title": "Entity",
+            "type": "string"
+          },
+          "measurement_boundary": {
+            "title": "Measurement Boundary",
+            "type": "string"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "nonnegative": {
+            "default": false,
+            "title": "Nonnegative",
+            "type": "boolean"
+          },
+          "sign": {
+            "title": "Sign",
+            "type": "integer"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "metric_id",
+          "source_id",
+          "entity",
+          "unit",
+          "sign",
+          "measurement_boundary"
+        ],
+        "title": "MetricConfig",
+        "type": "object"
+      },
+      "MetricPoint": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "$ref": "#/components/schemas/Confidence",
+            "default": "observed"
+          },
+          "derived": {
+            "default": false,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "input_metric_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Metric Ids",
+            "type": "array"
+          },
+          "mapping_revision": {
+            "default": 1,
+            "title": "Mapping Revision",
+            "type": "integer"
+          },
+          "measurement_boundary": {
+            "title": "Measurement Boundary",
+            "type": "string"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "reported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last report to Home Assistant – not a device measurement time",
+            "title": "Reported At"
+          },
+          "source_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Changed At"
+          },
+          "source_entity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entity"
+          },
+          "source_epoch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Epoch Id"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          },
+          "timestamp_kind": {
+            "$ref": "#/components/schemas/TimestampKind",
+            "default": "ha_reported"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Until"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "metric_id",
+          "value",
+          "unit",
+          "source_id",
+          "measurement_boundary",
+          "observed_at",
+          "state"
+        ],
+        "title": "MetricPoint",
+        "type": "object"
+      },
+      "MetricProblem": {
+        "additionalProperties": false,
+        "properties": {
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "metric_id",
+          "state"
+        ],
+        "title": "MetricProblem",
+        "type": "object"
+      },
+      "MetricState": {
+        "enum": [
+          "ok",
+          "stale",
+          "unknown",
+          "implausible"
+        ],
+        "title": "MetricState",
+        "type": "string"
+      },
+      "PlantCapabilities": {
+        "additionalProperties": false,
+        "properties": {
+          "api_version": {
+            "title": "Api Version",
+            "type": "string"
+          },
+          "features": {
+            "$ref": "#/components/schemas/PlantFeatures"
+          },
+          "hub_version": {
+            "title": "Hub Version",
+            "type": "string"
+          },
+          "metrics": {
+            "description": "Every metric id the snapshot carries, including the calculated ones",
+            "items": {
+              "type": "string"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/PlantModuleInfo"
+            },
+            "title": "Modules",
+            "type": "array"
+          },
+          "plant_revision": {
+            "title": "Plant Revision",
+            "type": "integer"
+          },
+          "pv_peak_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Installed power of all PV generators in W (scale of gauges); null when the user has not entered it",
+            "title": "Pv Peak W"
+          },
+          "rscp_pv": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "PV module whose strings are the E3/DC trackers of /v2/rscp",
+            "title": "Rscp Pv"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Time zone of the plant from Home Assistant (IANA name); null until the hub has read it",
+            "title": "Timezone"
+          }
+        },
+        "required": [
+          "api_version",
+          "hub_version",
+          "plant_revision",
+          "timezone",
+          "modules",
+          "metrics",
+          "features"
+        ],
+        "title": "PlantCapabilities",
+        "type": "object"
+      },
+      "PlantComparison": {
+        "additionalProperties": false,
+        "description": "Like the v1 comparison without the balance profile; metric ids are v2 category ids (pv_1, grid.import …) or\nthe KPIs (autarky, self_consumption).",
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/CompareSide"
+          },
+          "aligned_end_a": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aligned End A"
+          },
+          "aligned_end_b": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aligned End B"
+          },
+          "available_bases": {
+            "items": {
+              "$ref": "#/components/schemas/CompareBasisOption"
+            },
+            "title": "Available Bases",
+            "type": "array"
+          },
+          "axis": {
+            "items": {
+              "$ref": "#/components/schemas/CompareAxisPoint"
+            },
+            "title": "Axis",
+            "type": "array"
+          },
+          "b": {
+            "$ref": "#/components/schemas/CompareSide"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/CompareBasis"
+          },
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "cut": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cut"
+          },
+          "default_basis": {
+            "$ref": "#/components/schemas/CompareBasis"
+          },
+          "excluded": {
+            "items": {
+              "$ref": "#/components/schemas/CompareExclusion"
+            },
+            "title": "Excluded",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/CompareMetric"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "no_window": {
+            "title": "No Window",
+            "type": "boolean"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/CompareNote"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "refreshing": {
+            "default": false,
+            "title": "Refreshing",
+            "type": "boolean"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "basis",
+          "default_basis",
+          "available_bases",
+          "timezone",
+          "calculation_version",
+          "generated_at",
+          "cut",
+          "no_window",
+          "a",
+          "b",
+          "axis",
+          "metrics",
+          "excluded",
+          "notes"
+        ],
+        "title": "PlantComparison",
+        "type": "object"
+      },
+      "PlantConsumer": {
+        "additionalProperties": false,
+        "properties": {
+          "consumer_id": {
+            "description": "HA energy statistic of the consumer (stable identity)",
+            "title": "Consumer Id",
+            "type": "string"
+          },
+          "energy_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Reason"
+          },
+          "energy_today_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Today Wh"
+          },
+          "kind": {
+            "description": "'device' (a consumer of the HA energy dashboard) or 'module' (a module of the plant)",
+            "title": "Kind",
+            "type": "string"
+          },
+          "module": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "module id for kind 'module' (wallbox, generic_1 …)",
+            "title": "Module"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "power_reported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Reported At"
+          },
+          "power_state": {
+            "description": "ok | stale | unknown | assumed",
+            "title": "Power State",
+            "type": "string"
+          },
+          "power_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power W"
+          }
+        },
+        "required": [
+          "consumer_id",
+          "name",
+          "kind",
+          "power_w",
+          "power_state",
+          "energy_today_wh"
+        ],
+        "title": "PlantConsumer",
+        "type": "object"
+      },
+      "PlantConsumers": {
+        "additionalProperties": false,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "consumers": {
+            "items": {
+              "$ref": "#/components/schemas/PlantConsumer"
+            },
+            "title": "Consumers",
+            "type": "array"
+          },
+          "consumption_today_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumption Today Wh"
+          },
+          "consumption_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consumption W"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "stats_from": {
+            "format": "date-time",
+            "title": "Stats From",
+            "type": "string"
+          },
+          "stats_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stats Until"
+          },
+          "untracked_energy": {
+            "$ref": "#/components/schemas/PlantConsumersRest"
+          },
+          "untracked_power": {
+            "$ref": "#/components/schemas/PlantConsumersRest"
+          }
+        },
+        "required": [
+          "available",
+          "generated_at",
+          "local_date",
+          "stats_from",
+          "stats_until",
+          "consumption_w",
+          "consumption_today_wh",
+          "consumers",
+          "untracked_power",
+          "untracked_energy"
+        ],
+        "title": "PlantConsumers",
+        "type": "object"
+      },
+      "PlantConsumersRest": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "unmeasured": {
+            "default": 0,
+            "title": "Unmeasured",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "PlantConsumersRest",
+        "type": "object"
+      },
+      "PlantDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "ha_connected": {
+            "title": "Ha Connected",
+            "type": "boolean"
+          },
+          "ha_disconnected_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ha Disconnected Since"
+          },
+          "hub_version": {
+            "title": "Hub Version",
+            "type": "string"
+          },
+          "journal": {
+            "items": {
+              "$ref": "#/components/schemas/PlantJournalItem"
+            },
+            "title": "Journal",
+            "type": "array"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/PlantModuleDiagnostics"
+            },
+            "title": "Modules",
+            "type": "array"
+          },
+          "plant_revision": {
+            "title": "Plant Revision",
+            "type": "integer"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/PlantProblem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "trust": {
+            "items": {
+              "$ref": "#/components/schemas/PlantTrust"
+            },
+            "title": "Trust",
+            "type": "array"
+          }
+        },
+        "required": [
+          "hub_version",
+          "generated_at",
+          "ha_connected",
+          "plant_revision",
+          "modules",
+          "problems"
+        ],
+        "title": "PlantDiagnostics",
+        "type": "object"
+      },
+      "PlantEnergyBucket": {
+        "additionalProperties": false,
+        "properties": {
+          "allocation": {
+            "description": "'observed' or 'time_allocated' (an hour spread over its quarter hours)",
+            "title": "Allocation",
+            "type": "string"
+          },
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "coverage_fraction": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage Fraction",
+            "type": "number"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "energy_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Known energy of the bucket; null = unknown or no source, never 0",
+            "title": "Energy Wh"
+          },
+          "local_label": {
+            "description": "day 'HH:MM', week 6-h block 'YYYY-MM-DDTHH:00', month 'YYYY-MM-DD', year ISO week 'YYYY-Www'",
+            "title": "Local Label",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PlantEnergyMethod"
+          },
+          "provisional": {
+            "default": false,
+            "title": "Provisional",
+            "type": "boolean"
+          },
+          "quality_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quality Reasons",
+            "type": "array"
+          },
+          "source_resolution_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Resolution of the data the bucket was computed from (300 / 3600 s); null for raw states and for the existing calculation",
+            "title": "Source Resolution S"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "unresolved_wh_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Upper bound of the unresolved share",
+            "title": "Unresolved Wh Max"
+          },
+          "utc_offset_minutes": {
+            "title": "Utc Offset Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "local_label",
+          "utc_offset_minutes",
+          "energy_wh",
+          "method",
+          "coverage_fraction",
+          "complete",
+          "allocation",
+          "calculation_version"
+        ],
+        "title": "PlantEnergyBucket",
+        "type": "object"
+      },
+      "PlantEnergyKpis": {
+        "additionalProperties": false,
+        "properties": {
+          "autarky_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Coverage"
+          },
+          "autarky_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Pct"
+          },
+          "balance_residual_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sources − sinks of measured sums; null when the consumption is calculated",
+            "title": "Balance Residual Wh"
+          },
+          "consumption_ring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnergyRing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cross_check_residual_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "same balance with a second grid meter",
+            "title": "Cross Check Residual Wh"
+          },
+          "direct_consumption_side_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Consumption Side Wh"
+          },
+          "direct_generation_side_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Generation Side Wh"
+          },
+          "generation_ring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnergyRing"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "residual_warning": {
+            "default": false,
+            "title": "Residual Warning",
+            "type": "boolean"
+          },
+          "self_consumption_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Coverage"
+          },
+          "self_consumption_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Pct"
+          }
+        },
+        "required": [
+          "autarky_pct",
+          "self_consumption_pct"
+        ],
+        "title": "PlantEnergyKpis",
+        "type": "object"
+      },
+      "PlantEnergyMethod": {
+        "enum": [
+          "counter_delta",
+          "sample_hold",
+          "statistic_mean",
+          "derived"
+        ],
+        "title": "PlantEnergyMethod",
+        "type": "string"
+      },
+      "PlantEnergyPeriod": {
+        "additionalProperties": false,
+        "properties": {
+          "buckets": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/PlantEnergyBucket"
+              },
+              "type": "array"
+            },
+            "description": "Categories under v2 ids: '<module>' (pv_1, wallbox, generic_1), 'generation', 'consumption', 'home', '<module>.<direction>' (grid.import, battery.charge), '<module>.net' (balance of a signed power), 'supply.<source>' (origin of the consumption), '<module>.string_<n>'",
+            "title": "Buckets",
+            "type": "object"
+          },
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/PlantEnergyKpis"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "period": {
+            "title": "Period",
+            "type": "string"
+          },
+          "plant_revision": {
+            "title": "Plant Revision",
+            "type": "integer"
+          },
+          "refreshing": {
+            "default": false,
+            "title": "Refreshing",
+            "type": "boolean"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/PlantEnergyTotals"
+          }
+        },
+        "required": [
+          "period",
+          "local_date",
+          "timezone",
+          "plant_revision",
+          "calculation_version",
+          "buckets",
+          "totals",
+          "kpis",
+          "complete"
+        ],
+        "title": "PlantEnergyPeriod",
+        "type": "object"
+      },
+      "PlantEnergySource": {
+        "additionalProperties": false,
+        "properties": {
+          "method": {
+            "description": "statistic_mean | counter_delta | sample_hold | derived | existing_calculation",
+            "title": "Method",
+            "type": "string"
+          },
+          "metric_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metric Id"
+          },
+          "mixed": {
+            "default": false,
+            "description": "different sources within the period",
+            "title": "Mixed",
+            "type": "boolean"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "e.g. the grid meter of the existing calculation",
+            "title": "Note"
+          },
+          "resolution_s": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution S"
+          }
+        },
+        "required": [
+          "method"
+        ],
+        "title": "PlantEnergySource",
+        "type": "object"
+      },
+      "PlantEnergyTotals": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage",
+            "type": "object"
+          },
+          "energy_wh": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Energy Wh",
+            "type": "object"
+          },
+          "sources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlantEnergySource"
+            },
+            "title": "Sources",
+            "type": "object"
+          },
+          "unresolved_wh_max": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Unresolved Wh Max",
+            "type": "object"
+          }
+        },
+        "required": [
+          "energy_wh"
+        ],
+        "title": "PlantEnergyTotals",
+        "type": "object"
+      },
+      "PlantFeatures": {
+        "additionalProperties": false,
+        "properties": {
+          "compare": {
+            "default": false,
+            "title": "Compare",
+            "type": "boolean"
+          },
+          "consumers": {
+            "default": false,
+            "title": "Consumers",
+            "type": "boolean"
+          },
+          "history": {
+            "default": false,
+            "title": "History",
+            "type": "boolean"
+          },
+          "rscp": {
+            "default": false,
+            "title": "Rscp",
+            "type": "boolean"
+          },
+          "widget": {
+            "default": false,
+            "title": "Widget",
+            "type": "boolean"
+          }
+        },
+        "title": "PlantFeatures",
+        "type": "object"
+      },
+      "PlantJournalItem": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "kind",
+          "subject"
+        ],
+        "title": "PlantJournalItem",
+        "type": "object"
+      },
+      "PlantMetric": {
+        "additionalProperties": false,
+        "properties": {
+          "derived": {
+            "default": false,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "input_metric_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Metric Ids",
+            "type": "array"
+          },
+          "metric_id": {
+            "description": "<module>.<point>, e.g. 'pv_1.power' or 'pv_2.string_1.voltage'",
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "module": {
+            "title": "Module",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "reported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last report of the source (derived values: the oldest of their inputs)",
+            "title": "Reported At"
+          },
+          "role": {
+            "$ref": "#/components/schemas/PointRole"
+          },
+          "source_changed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Changed At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "metric_id",
+          "module",
+          "value",
+          "unit",
+          "role",
+          "state",
+          "observed_at"
+        ],
+        "title": "PlantMetric",
+        "type": "object"
+      },
+      "PlantModuleDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "discarded_events": {
+            "default": 0,
+            "title": "Discarded Events",
+            "type": "integer"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          },
+          "newest_report_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newest Report Age S"
+          },
+          "oldest_report_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Report Age S"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "module_id",
+          "state"
+        ],
+        "title": "PlantModuleDiagnostics",
+        "type": "object"
+      },
+      "PlantModuleInfo": {
+        "additionalProperties": false,
+        "description": "A module that is switched on. What is switched off does not appear at all.",
+        "properties": {
+          "balance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "generic: 'part_of_home' or 'beside_home'",
+            "title": "Balance"
+          },
+          "id": {
+            "description": "Stable slot id: grid, pv_1…pv_3, battery, wallbox, generic_1…generic_3, consumption",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "description": "grid | pv | battery | wallbox | generic | consumption",
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "description": "Name chosen by the user; changing it changes no id",
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PlantPointInfo"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "strings": {
+            "items": {
+              "$ref": "#/components/schemas/PlantStringInfo"
+            },
+            "title": "Strings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "points"
+        ],
+        "title": "PlantModuleInfo",
+        "type": "object"
+      },
+      "PlantModuleStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState",
+            "description": "Worst state of the module's balance-relevant points"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "PlantModuleStatus",
+        "type": "object"
+      },
+      "PlantPointInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "Point within its module or string, e.g. 'power', 'soc'",
+            "title": "Id",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/PointRole"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "id",
+          "unit",
+          "role"
+        ],
+        "title": "PlantPointInfo",
+        "type": "object"
+      },
+      "PlantPowerResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "journal_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Since"
+          },
+          "monitoring_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/TimeInterval"
+            },
+            "title": "Monitoring Gaps",
+            "type": "array"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/PlantPowerSeries"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "timezone",
+          "calculation_version",
+          "series"
+        ],
+        "title": "PlantPowerResponse",
+        "type": "object"
+      },
+      "PlantPowerSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "derived": {
+            "default": false,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "outages": {
+            "items": {
+              "$ref": "#/components/schemas/TimeInterval"
+            },
+            "title": "Outages",
+            "type": "array"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PowerPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "resolution_s": {
+            "title": "Resolution S",
+            "type": "integer"
+          },
+          "series_id": {
+            "description": "Id of the live metric with the same meaning and sign, e.g. 'battery.power' (+ charging), 'grid.power' (+ import), 'battery.soc'",
+            "title": "Series Id",
+            "type": "string"
+          },
+          "source": {
+            "description": "statistic_mean | existing_calculation",
+            "title": "Source",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "series_id",
+          "unit",
+          "resolution_s",
+          "source",
+          "points"
+        ],
+        "title": "PlantPowerSeries",
+        "type": "object"
+      },
+      "PlantProblem": {
+        "additionalProperties": false,
+        "properties": {
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "metric_id",
+          "state"
+        ],
+        "title": "PlantProblem",
+        "type": "object"
+      },
+      "PlantSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_comparable": {
+            "description": "False if the inputs are more than 15 s apart",
+            "title": "Balance Comparable",
+            "type": "boolean"
+          },
+          "balance_residual_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sources − sinks in W, never redistributed; null without a measured total consumption",
+            "title": "Balance Residual W"
+          },
+          "connected": {
+            "description": "Home Assistant connection of the hub",
+            "title": "Connected",
+            "type": "boolean"
+          },
+          "edges": {
+            "description": "edge_id = node on the module side; nodes: module ids plus 'generation', 'bus', 'consumption', 'home'",
+            "items": {
+              "$ref": "#/components/schemas/FlowEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlantMetric"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "modules": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PlantModuleStatus"
+            },
+            "title": "Modules",
+            "type": "object"
+          },
+          "plant_revision": {
+            "title": "Plant Revision",
+            "type": "integer"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "generated_at",
+          "plant_revision",
+          "connected",
+          "metrics",
+          "edges",
+          "balance_residual_w",
+          "balance_comparable",
+          "modules"
+        ],
+        "title": "PlantSnapshot",
+        "type": "object"
+      },
+      "PlantStringInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "'string_1' … – metric ids are <module>.<string>.<point>",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PlantPointInfo"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "points"
+        ],
+        "title": "PlantStringInfo",
+        "type": "object"
+      },
+      "PlantTrust": {
+        "additionalProperties": false,
+        "properties": {
+          "counter_anomalies": {
+            "default": 0,
+            "title": "Counter Anomalies",
+            "type": "integer"
+          },
+          "last_evidence_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Evidence At"
+          },
+          "module_id": {
+            "title": "Module Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id"
+        ],
+        "title": "PlantTrust",
+        "type": "object"
+      },
+      "PlantWidgetSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "live": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WidgetLive"
+            },
+            "description": "Live metric ids (generation.power, grid.power, battery.soc …)",
+            "title": "Live",
+            "type": "object"
+          },
+          "plant_revision": {
+            "title": "Plant Revision",
+            "type": "integer"
+          },
+          "soc": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetSoc"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sparkline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetSparkline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlantWidgetToday"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetWindow"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Last completed quarter hour; values under the live metric ids with the live sign"
+          }
+        },
+        "required": [
+          "generated_at",
+          "timezone",
+          "plant_revision",
+          "calculation_version",
+          "live"
+        ],
+        "title": "PlantWidgetSnapshot",
+        "type": "object"
+      },
+      "PlantWidgetToday": {
+        "additionalProperties": false,
+        "properties": {
+          "autarky_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Coverage"
+          },
+          "autarky_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Pct"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "coverage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage",
+            "type": "object"
+          },
+          "energy_wh": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Today's energy under the v2 category ids",
+            "title": "Energy Wh",
+            "type": "object"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "self_consumption_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Coverage"
+          },
+          "self_consumption_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Pct"
+          }
+        },
+        "required": [
+          "local_date",
+          "energy_wh",
+          "coverage",
+          "autarky_pct",
+          "self_consumption_pct",
+          "complete"
+        ],
+        "title": "PlantWidgetToday",
+        "type": "object"
+      },
+      "PointRole": {
+        "enum": [
+          "authoritative",
+          "subset",
+          "cross_check",
+          "detail",
+          "derived"
+        ],
+        "title": "PointRole",
+        "type": "string"
+      },
+      "PowerPoint": {
+        "additionalProperties": false,
+        "description": "Statistics of one column [t, t + resolution) – never a single measurement.",
+        "properties": {
+          "applicable": {
+            "default": 1.0,
+            "description": "share of the column with a source (0 = future)",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Applicable",
+            "type": "number"
+          },
+          "coverage": {
+            "description": "covered / applicable seconds",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "type": "number"
+          },
+          "estimated": {
+            "default": 0.0,
+            "description": "share of the covered time that is estimated",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated",
+            "type": "number"
+          },
+          "max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max"
+          },
+          "mean": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean"
+          },
+          "min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min"
+          },
+          "t": {
+            "format": "date-time",
+            "title": "T",
+            "type": "string"
+          }
+        },
+        "required": [
+          "t",
+          "mean",
+          "min",
+          "max",
+          "coverage"
+        ],
+        "title": "PowerPoint",
+        "type": "object"
+      },
+      "PowerResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "journal_since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Journal Since"
+          },
+          "monitoring_gaps": {
+            "description": "hub not running",
+            "items": {
+              "$ref": "#/components/schemas/TimeInterval"
+            },
+            "title": "Monitoring Gaps",
+            "type": "array"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/PowerSeries"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "timezone": {
+            "default": "Europe/Berlin",
+            "title": "Timezone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "calculation_version",
+          "series"
+        ],
+        "title": "PowerResponse",
+        "type": "object"
+      },
+      "PowerSeries": {
+        "additionalProperties": false,
+        "properties": {
+          "derived": {
+            "default": false,
+            "title": "Derived",
+            "type": "boolean"
+          },
+          "outages": {
+            "description": "source unavailable per journal",
+            "items": {
+              "$ref": "#/components/schemas/TimeInterval"
+            },
+            "title": "Outages",
+            "type": "array"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PowerPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "resolution_s": {
+            "title": "Resolution S",
+            "type": "integer"
+          },
+          "series_id": {
+            "title": "Series Id",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "series_id",
+          "unit",
+          "resolution_s",
+          "points"
+        ],
+        "title": "PowerSeries",
+        "type": "object"
+      },
+      "RingState": {
+        "enum": [
+          "ok",
+          "uncertain",
+          "unresolvable",
+          "incomplete",
+          "none"
+        ],
+        "title": "RingState",
+        "type": "string"
+      },
+      "RscpDevice": {
+        "additionalProperties": false,
+        "properties": {
+          "firmware": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Firmware"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "serial_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Serial Masked"
+          }
+        },
+        "title": "RscpDevice",
+        "type": "object"
+      },
+      "RscpGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RscpItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/RscpValue"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "observed_at",
+          "stale",
+          "values"
+        ],
+        "title": "RscpGroup",
+        "type": "object"
+      },
+      "RscpItem": {
+        "additionalProperties": false,
+        "description": "A battery, battery module, string, phase or meter; ``details`` = cell voltages/temperatures (expandable).",
+        "properties": {
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/RscpValue"
+            },
+            "title": "Details",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/RscpValue"
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "values"
+        ],
+        "title": "RscpItem",
+        "type": "object"
+      },
+      "RscpValue": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "value"
+        ],
+        "title": "RscpValue",
+        "type": "object"
+      },
+      "RscpView": {
+        "additionalProperties": false,
+        "properties": {
+          "device": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RscpDevice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/RscpGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "last_attempt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Attempt"
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Success"
+          },
+          "power_interval_s": {
+            "title": "Power Interval S",
+            "type": "integer"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "state": {
+            "enum": [
+              "disabled",
+              "not_configured",
+              "idle",
+              "connecting",
+              "connected",
+              "degraded",
+              "error",
+              "auth_failed"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "system_interval_s": {
+            "title": "System Interval S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "state",
+          "enabled",
+          "power_interval_s",
+          "system_interval_s"
+        ],
+        "title": "RscpView",
+        "type": "object"
+      },
+      "Snapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "balance_comparable": {
+            "description": "False if inputs are more than 15 s apart",
+            "title": "Balance Comparable",
+            "type": "boolean"
+          },
+          "balance_profile": {
+            "$ref": "#/components/schemas/BalanceProfile"
+          },
+          "balance_residual_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Sources − sinks in W; never redistributed",
+            "title": "Balance Residual W"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/FlowEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MetricPoint"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "sources": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "title": "Sources",
+            "type": "object"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "generated_at",
+          "balance_profile",
+          "metrics",
+          "edges",
+          "balance_residual_w",
+          "balance_comparable",
+          "sources"
+        ],
+        "title": "Snapshot",
+        "type": "object"
+      },
+      "SourceConfigView": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "stale_after_s": {
+            "title": "Stale After S",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source_id",
+          "kind",
+          "stale_after_s"
+        ],
+        "title": "SourceConfigView",
+        "type": "object"
+      },
+      "SourceDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "discarded_events": {
+            "default": 0,
+            "title": "Discarded Events",
+            "type": "integer"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "newest_report_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newest Report Age S"
+          },
+          "oldest_report_age_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldest Report Age S"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "stale_after_s": {
+            "title": "Stale After S",
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "source_id",
+          "state",
+          "stale_after_s"
+        ],
+        "title": "SourceDiagnostics",
+        "type": "object"
+      },
+      "SourceStatus": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          }
+        },
+        "required": [
+          "source_id",
+          "state"
+        ],
+        "title": "SourceStatus",
+        "type": "object"
+      },
+      "TimeInterval": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "TimeInterval",
+        "type": "object"
+      },
+      "TimestampKind": {
+        "enum": [
+          "ha_reported",
+          "history_point",
+          "device"
+        ],
+        "title": "TimestampKind",
+        "type": "string"
+      },
+      "Unit": {
+        "enum": [
+          "W",
+          "Wh",
+          "V",
+          "A",
+          "%",
+          "bool",
+          "text"
+        ],
+        "title": "Unit",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WallboxTrust": {
+        "additionalProperties": false,
+        "properties": {
+          "counter_anomalies": {
+            "default": 0,
+            "title": "Counter Anomalies",
+            "type": "integer"
+          },
+          "last_evidence_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Evidence At"
+          }
+        },
+        "title": "WallboxTrust",
+        "type": "object"
+      },
+      "WidgetLive": {
+        "additionalProperties": false,
+        "properties": {
+          "observed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "measurement/report time of the value",
+            "title": "Observed At"
+          },
+          "state": {
+            "$ref": "#/components/schemas/MetricState"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value",
+          "state"
+        ],
+        "title": "WidgetLive",
+        "type": "object"
+      },
+      "WidgetSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "calculation_version": {
+            "title": "Calculation Version",
+            "type": "integer"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "live": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WidgetLive"
+            },
+            "title": "Live",
+            "type": "object"
+          },
+          "soc": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetSoc"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sparkline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetSparkline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timezone": {
+            "default": "Europe/Berlin",
+            "title": "Timezone",
+            "type": "string"
+          },
+          "today": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetToday"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "generated_at",
+          "calculation_version",
+          "live"
+        ],
+        "title": "WidgetSnapshot",
+        "type": "object"
+      },
+      "WidgetSoc": {
+        "additionalProperties": false,
+        "properties": {
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "observed_at"
+        ],
+        "title": "WidgetSoc",
+        "type": "object"
+      },
+      "WidgetSparkline": {
+        "additionalProperties": false,
+        "properties": {
+          "consumption_w": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Consumption W",
+            "type": "array"
+          },
+          "generation_w": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Generation W",
+            "type": "array"
+          },
+          "resolution_s": {
+            "title": "Resolution S",
+            "type": "integer"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "resolution_s",
+          "generation_w",
+          "consumption_w"
+        ],
+        "title": "WidgetSparkline",
+        "type": "object"
+      },
+      "WidgetToday": {
+        "additionalProperties": false,
+        "properties": {
+          "autarky_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Coverage"
+          },
+          "autarky_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Autarky Pct"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "coverage": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Coverage",
+            "type": "object"
+          },
+          "energy_wh": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Energy Wh",
+            "type": "object"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "self_consumption_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Coverage"
+          },
+          "self_consumption_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self Consumption Pct"
+          },
+          "womo_coverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Womo Coverage"
+          },
+          "womo_wh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Womo Wh"
+          }
+        },
+        "required": [
+          "local_date",
+          "energy_wh",
+          "coverage",
+          "autarky_pct",
+          "self_consumption_pct",
+          "complete"
+        ],
+        "title": "WidgetToday",
+        "type": "object"
+      },
+      "WidgetWindow": {
+        "additionalProperties": false,
+        "description": "Last completed, aligned quarter hour. Signs like the live snapshot: battery + = charging, grid + = import.",
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "values": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WidgetWindowValue"
+            },
+            "title": "Values",
+            "type": "object"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "values"
+        ],
+        "title": "WidgetWindow",
+        "type": "object"
+      },
+      "WidgetWindowValue": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Coverage",
+            "type": "number"
+          },
+          "mean_w": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean W"
+          },
+          "measured_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "end of the last valid measurement inside the window",
+            "title": "Measured Until"
+          }
+        },
+        "required": [
+          "mean_w",
+          "coverage"
+        ],
+        "title": "WidgetWindowValue",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Solar Visor Hub – public read API",
+    "version": "0.2.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health/live": {
+      "get": {
+        "operationId": "health_live_health_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Live Health Live Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Live"
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Ready Health Ready Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health Ready"
+      }
+    },
+    "/v1/availability": {
+      "get": {
+        "description": "Intervals in which metrics were not ok (journal) – for hatching outages in history charts.",
+        "operationId": "availability_route_v1_availability_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "metrics",
+            "required": true,
+            "schema": {
+              "title": "Metrics",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Availability Route"
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities_v1_capabilities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capabilities"
+      }
+    },
+    "/v1/compare": {
+      "get": {
+        "description": "Two periods compared (comparison plan 2026-10-06): local calendar days [from, toExclusive); the hub aligns,\ncuts running periods, rates the quality and offers the sensible bases.",
+        "operationId": "compare_route_v1_compare_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year",
+                "range"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "aFrom",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Afrom",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "aToExclusive",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Atoexclusive",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bFrom",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Bfrom",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bToExclusive",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Btoexclusive",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "basis",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompareBasis"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Basis"
+            }
+          },
+          {
+            "in": "query",
+            "name": "balanceProfile",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BalanceProfile",
+              "default": "e3dc_balance"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/EnergyComparison"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobStatus"
+                    }
+                  ],
+                  "title": "Response Compare Route V1 Compare Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "computation started – poll /v1/jobs/{id}"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare Route"
+      }
+    },
+    "/v1/config": {
+      "get": {
+        "operationId": "config_v1_config_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Config"
+      }
+    },
+    "/v1/consumers": {
+      "get": {
+        "description": "Consumers of the HA energy dashboard for the home detail sheet: now, today, not tracked (read-only).",
+        "operationId": "consumers_route_v1_consumers_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "balanceProfile",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BalanceProfile",
+              "default": "e3dc_balance"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeConsumers"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consumers Route"
+      }
+    },
+    "/v1/diagnostics": {
+      "get": {
+        "operationId": "diagnostics_v1_diagnostics_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Diagnostics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Diagnostics"
+      }
+    },
+    "/v1/energy": {
+      "get": {
+        "operationId": "energy_route_v1_energy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "balanceProfile",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BalanceProfile",
+              "default": "e3dc_balance"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/EnergyPeriod"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobStatus"
+                    }
+                  ],
+                  "title": "Response Energy Route V1 Energy Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "computation started – poll /v1/jobs/{id}"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Energy Route"
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "job_route_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Job Route"
+      }
+    },
+    "/v1/power": {
+      "get": {
+        "description": "Power history from the energy engine's validated intervals (same rules, epochs and vetoes as\n/v1/energy). Points are column statistics (mean over the covered time, min, max), never samples.",
+        "operationId": "power_route_v1_power_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "series",
+            "required": true,
+            "schema": {
+              "title": "Series",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxPoints",
+            "required": false,
+            "schema": {
+              "default": 600,
+              "maximum": 2000,
+              "minimum": 10,
+              "title": "Maxpoints",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "balanceProfile",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BalanceProfile",
+              "default": "e3dc_balance"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PowerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Power Route"
+      }
+    },
+    "/v1/rscp": {
+      "get": {
+        "description": "E3/DC detail values from the cache; asking keeps the session open for a while (polling only while the\nRSCP tab or a detail sheet is open – user decision 2026-10-05). Never waits for the device.",
+        "operationId": "rscp_route_v1_rscp_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RscpView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rscp Route"
+      }
+    },
+    "/v1/snapshot": {
+      "get": {
+        "operationId": "snapshot_v1_snapshot_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "profile",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/BalanceProfile",
+              "default": "e3dc_balance"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Snapshot"
+      }
+    },
+    "/v1/widget-snapshot": {
+      "get": {
+        "description": "Compact snapshot for complications/widgets (live + last quarter hour + today + sparkline).",
+        "operationId": "widget_route_v1_widget_snapshot_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Widget Route"
+      }
+    },
+    "/v2/availability": {
+      "get": {
+        "description": "Intervals in which metrics were not ok (journal) – for hatching outages in history charts; metric ids of\nthe snapshot. The imported plant's journal is written under the old ids and read through the id table.",
+        "operationId": "availability_v2_v2_availability_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "metrics",
+            "required": true,
+            "schema": {
+              "title": "Metrics",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Availability V2"
+      }
+    },
+    "/v2/capabilities": {
+      "get": {
+        "operationId": "capabilities_v2_v2_capabilities_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantCapabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Capabilities V2"
+      }
+    },
+    "/v2/compare": {
+      "get": {
+        "description": "Two periods compared (imported plant only, so far): local days [from, toExclusive).",
+        "operationId": "compare_v2_v2_compare_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year",
+                "range"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "aFrom",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Afrom",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "aToExclusive",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Atoexclusive",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bFrom",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Bfrom",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bToExclusive",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Btoexclusive",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "basis",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CompareBasis"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Basis"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PlantComparison"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobStatus"
+                    }
+                  ],
+                  "title": "Response Compare V2 V2 Compare Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "computation started – poll /v2/jobs/{id}"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Compare V2"
+      }
+    },
+    "/v2/consumers": {
+      "get": {
+        "description": "Consumers of the HA energy dashboard for the home detail sheet (imported plant only, so far).",
+        "operationId": "consumers_v2_v2_consumers_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantConsumers"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consumers V2"
+      }
+    },
+    "/v2/diagnostics": {
+      "get": {
+        "operationId": "diagnostics_v2_v2_diagnostics_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantDiagnostics"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Diagnostics V2"
+      }
+    },
+    "/v2/energy": {
+      "get": {
+        "operationId": "energy_v2_v2_energy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "required": false,
+            "schema": {
+              "default": "day",
+              "enum": [
+                "day",
+                "week",
+                "month",
+                "year"
+              ],
+              "title": "Period",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PlantEnergyPeriod"
+                    },
+                    {
+                      "$ref": "#/components/schemas/JobStatus"
+                    }
+                  ],
+                  "title": "Response Energy V2 V2 Energy Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "computation started – poll /v2/jobs/{id}"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Energy V2"
+      }
+    },
+    "/v2/jobs/{job_id}": {
+      "get": {
+        "operationId": "job_v2_v2_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Job V2"
+      }
+    },
+    "/v2/power": {
+      "get": {
+        "description": "Power history under the live metric ids (same meaning and sign as the snapshot).",
+        "operationId": "power_v2_v2_power_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "series",
+            "required": true,
+            "schema": {
+              "title": "Series",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxPoints",
+            "required": false,
+            "schema": {
+              "default": 600,
+              "maximum": 2000,
+              "minimum": 10,
+              "title": "Maxpoints",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantPowerResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Power V2"
+      }
+    },
+    "/v2/rscp": {
+      "get": {
+        "description": "E3/DC detail values from the cache; asking keeps the session open for a while. Never waits for the device.",
+        "operationId": "rscp_v2_v2_rscp_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RscpView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rscp V2"
+      }
+    },
+    "/v2/snapshot": {
+      "get": {
+        "operationId": "snapshot_v2_v2_snapshot_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Snapshot V2"
+      }
+    },
+    "/v2/widget-snapshot": {
+      "get": {
+        "description": "Compact snapshot for complications and widgets; the history part may be missing, the live part never.",
+        "operationId": "widget_v2_v2_widget_snapshot_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlantWidgetSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Widget V2"
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Hub CLI inside the add-on container, always as the service user (files it creates stay readable for the hub).
+# The container is called <container of the app> (Supervisor before 2026.11: <container of the app>).
+#   docker exec -i  <container of the app> solar-visor-hub-cli pair [--scope read|admin] | devices | revoke <id>
+#   docker exec -it <container of the app> solar-visor-hub-cli set-secret influx      (-t: the input stays hidden)
+if [ "$(id -u)" = "0" ]; then
+    # the Supervisor may have rewritten the options (root, 0600) since the start
+    if [ -f /data/options.json ]; then chgrp solarvisor /data/options.json && chmod 640 /data/options.json; fi
+    exec setpriv --reuid=solarvisor --regid=solarvisor --clear-groups python -m solar_visor_hub.cli "$@"
+fi
+exec python -m solar_visor_hub.cli "$@"
