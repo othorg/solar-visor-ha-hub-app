@@ -7,13 +7,16 @@ cd "$(dirname "$0")/.."
 OUT="$(pwd)/${1:-build/context}"
 rm -rf "$OUT" && mkdir -p "$OUT"
 cp -R solar_visor/. "$OUT/"
-(cd web && npm ci --no-audit --no-fund --loglevel=error && npx vite build --logLevel error)
+# the web interface, then the renderer of the dashboard card into the same package (served over Ingress)
+(cd web && npm ci --no-audit --no-fund --loglevel=error && npx vite build --logLevel error \
+    && npx vite build -c vite.card.config.ts --mode renderer --logLevel error)
+test -f hub/src/solar_visor_hub/web/index.html && test -f hub/src/solar_visor_hub/web/card/card.js
 (cd hub && uv build --wheel -q -o "$OUT" \
     && uv export -q --no-dev --no-emit-project --frozen --format requirements.txt -o "$OUT/requirements.txt")
-# licenses: the app's own and those of the web dependencies bundled into the interface (React)
+# licenses: the app's own and those of the web dependencies bundled into the interface (React) and the card (MDI)
 mkdir -p "$OUT/licenses"
 cp LICENSE NOTICE "$OUT/licenses/"
-for pkg in react react-dom scheduler; do
+for pkg in react react-dom scheduler @mdi/js; do
     [ -f "web/node_modules/$pkg/LICENSE" ] && { echo "== $pkg"; cat "web/node_modules/$pkg/LICENSE"; echo; }
 done > "$OUT/licenses/THIRD_PARTY_WEB.txt"
 VERSION="$(sed -n 's/^version: "\(.*\)"/\1/p' solar_visor/config.yaml)"

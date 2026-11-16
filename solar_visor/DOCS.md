@@ -15,6 +15,13 @@ Open **Solar Visor** in the sidebar (or *Open web UI*). Everything is set up the
   Solar Visor apps).
 - **Devices & diagnostics** – pairing code and QR code for the apps, paired devices, connection tests.
 
+## Dashboard card
+
+`custom:solar-visor-card` shows the energy flow in any dashboard; tapping a device opens the history of its sensors.
+Install it with HACS (custom repository, type *Dashboard*) or from the release file `solar-visor-card.js` – see the
+README of the repository. Every Home Assistant user can use the card, so the sidebar entry is visible to all users;
+users who are not administrators see a notice there.
+
 ## Ports
 
 Both ports are off by default. Switch them on under *Network* only for the Solar Visor apps:
@@ -41,6 +48,13 @@ Optionen:
 - **Historie** – Datenquellen, Archiv der abgeschlossenen Tage, Neuberechnung (die Energie je Zeitraum zeigen die
   Solar-Visor-Apps).
 - **Geräte & Diagnose** – Kopplungscode und QR-Code für die Apps, gekoppelte Geräte, Verbindungstests.
+
+## Dashboard-Karte
+
+`custom:solar-visor-card` zeigt den Energiefluss in jedem Dashboard; ein Tipp auf ein Gerät öffnet den Verlauf seiner
+Sensoren. Installation über HACS (benutzerdefiniertes Repository, Typ *Dashboard*) oder aus der Release-Datei
+`solar-visor-card.js` – siehe README des Repositorys. Jeder Home-Assistant-Benutzer kann die Karte nutzen, deshalb ist
+der Seitenleisten-Eintrag für alle Benutzer sichtbar; wer kein Administrator ist, sieht dort einen Hinweis.
 
 ## Ports
 

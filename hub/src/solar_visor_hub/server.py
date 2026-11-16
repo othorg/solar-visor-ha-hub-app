@@ -68,7 +68,8 @@ from .runtime import (
 )
 from .settings import ADDON, addon_options, load_settings, runtime
 from .rscp_admin import RscpAdmin
-from .ui import AdminList, DevGuard, IngressGuard, UiContext, UiSettings, create_ui_app, load_ui_bind
+from .ui import DevGuard, IngressGuard, UiContext, UiSettings, UserList, build_label, create_ui_app, load_ui_bind
+from .ui_card import CardContext
 from .ui_admin import AdminContext
 from .ui_plant import PlantEditing
 
@@ -365,9 +366,13 @@ async def serve(phase: dict[str, bool] | None = None) -> str | None:
                                              timezone=lambda: ha.timezone, plant_history=plant_history, devices=devices,
                                              test_ha=test_ha, test_influx=test_influx, secrets=settings.secrets,
                                              rscp=RscpAdmin(rscp, rscp_store, settings.secrets),
-                                             influx=influx if influx.configurable else None)))
-        admins = AdminList(lambda message: ha.read(message, timeout=10, heavy=False))
-        ui_asgi: Any = IngressGuard(ui_app, admins) if ui_bind.ingress else DevGuard(ui_app)
+                                             influx=influx if influx.configurable else None),
+                                         card=CardContext(
+                                             plant=lambda: plant,
+                                             snapshot=(lambda: plant_live.snapshot(datetime.now(UTC))) if plant_live else None,
+                                             timezone=lambda: ha.timezone, build=build_label)))
+        users = UserList(lambda message: ha.read(message, timeout=10, heavy=False))
+        ui_asgi: Any = IngressGuard(ui_app, users) if ui_bind.ingress else DevGuard(ui_app)
         servers.append(_Server(uvicorn.Config(ui_asgi, host=ui_bind.host, port=ui_bind.port, log_level="info",
                                               proxy_headers=False, access_log=False)))
     log.info("mode %s: public API on %s:%s, admin on %s:%s%s, %d entities subscribed",

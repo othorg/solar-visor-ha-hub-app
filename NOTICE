@@ -7,4 +7,7 @@ Third-party components (installed as Python and npm dependencies, not included i
 own licenses, among them FastAPI, Pydantic, Uvicorn, HTTPX, websockets, segno, pye3dc and py3rijndael (MIT/BSD) for
 the hub, and React and Vite (MIT) for the web interface.
 
+The dashboard card contains the shapes of three Material Design Icons (home, ev-station, power-plug) by
+Pictogrammers, taken from @mdi/js and licensed under the Apache License, Version 2.0.
+
 Solar Visor is an independent project. It is not affiliated with Home Assistant, E3/DC, KOSTAL, openWB or OTRKY.

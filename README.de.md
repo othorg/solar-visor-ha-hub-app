@@ -17,14 +17,16 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
   und fehlenden Werten.
 - **Übersicht**: Live-Werte der Anlage und die Verbindung zu Home Assistant.
 - **Dashboard-Symbole**: ein Symbol je Modul (Solarmodul, Haus, Batterie, Strommast, Wallbox, Wohnmobil, Stecker) für
-  das Dashboard der Solar-Visor-Apps.
+  das Dashboard der Solar-Visor-Apps und die Dashboard-Karte.
+- **Dashboard-Karte**: der Energiefluss der Solar-Visor-Apps als Karte für Home-Assistant-Dashboards – ein Tipp auf
+  ein Gerät zeigt den Verlauf seiner Sensoren (siehe unten).
 - **Historie**: Die App bewahrt abgeschlossene Tage in einem eigenen Archiv auf (auch wenn der Recorder sie gelöscht
   hat) und berechnet daraus und aus dem Home-Assistant-Recorder die Energie je Tag, Woche, Monat und Jahr – angezeigt
   in den Solar-Visor-Apps; die Web-Seite zeigt Quellen und Archiv und kann Tage neu berechnen. Unbekanntes bleibt
   unbekannt – nie 0.
 - **Apps**: eine tokengeschützte Lese-API für die Solar-Visor-Apps; Kopplung per Einmalcode oder QR-Code.
 - **Sicher aufgebaut**: Die Web-Oberfläche ist nur über Home Assistant und nur für Administratoren erreichbar; die
-  API-Ports sind standardmäßig aus.
+  API-Ports sind standardmäßig aus. Die Dashboard-Karte liest nur.
 
 ## Voraussetzungen
 
@@ -49,6 +51,35 @@ Alles wird in der Web-Oberfläche eingerichtet – die App hat keine Optionen:
 2. **Datenpunkte** – alle zugeordneten Sensoren mit Live-Wert und Prüfergebnis.
 3. **Historie** – Datenquellen, Archiv der abgeschlossenen Tage, Neuberechnung.
 4. **Geräte & Diagnose** – Kopplung der Apps, gekoppelte Geräte, Verbindungstests.
+
+## Dashboard-Karte
+
+Die Dashboard-Karte zeigt den Energiefluss wie die Solar-Visor-Apps: Live-Werte, fließende Kugeln, den Ladestand der
+Batterie. Ein Tipp auf ein Gerät öffnet den Home-Assistant-Verlauf seiner Sensoren. Die App muss installiert sein und
+laufen – die Karte holt ihre Daten von ihr.
+
+Die Karte auf einem von zwei Wegen installieren:
+
+- **HACS**: *HACS* → ⋮ → *Benutzerdefinierte Repositories*, `https://github.com/othorg/solar-visor-ha-hub-app` mit dem
+  Typ **Dashboard** hinzufügen, dann **Solar Visor Card** herunterladen. HACS legt die Dashboard-Ressource selbst an.
+- **Von Hand**: `solar-visor-card.js` aus dem
+  [neuesten Release](https://github.com/othorg/solar-visor-ha-hub-app/releases/latest) herunterladen, nach
+  `/config/www/solar-visor-card.js` kopieren und unter *Einstellungen → Dashboards* → ⋮ → *Ressourcen* als
+  `/local/solar-visor-card.js?v=0.3.0` (Typ *JavaScript-Modul*) hinzufügen. Nach dem Ersetzen der Datei den `v=`-Wert
+  erhöhen.
+
+Dann die Karte einem Dashboard hinzufügen (*Karte hinzufügen* → *Solar Visor* oder in YAML):
+
+```yaml
+type: custom:solar-visor-card
+hours_to_show: 24   # optional: Zeitraum des Verlaufs in Stunden (Standard 24)
+# addon: 1a2b3c4d_solar_visor   # optional: nur falls die Karte die App nicht findet (Slug aus der Adresse der App)
+```
+
+Jeder Home-Assistant-Benutzer kann die Karte nutzen: Sie erreicht die App über Home Assistant (Ingress) mit den Rechten
+des angemeldeten Benutzers und liest nur. Deshalb ist der Seitenleisten-Eintrag **Solar Visor** für alle Benutzer
+sichtbar; wer kein Administrator ist, sieht dort statt der Web-Oberfläche einen kurzen Hinweis. Die Karte selbst kommt
+von der App und aktualisiert sich mit ihr – die Datei in `/config/www` lädt sie nur.
 
 ## Ports
 

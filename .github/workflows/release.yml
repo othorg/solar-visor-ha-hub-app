@@ -2,6 +2,8 @@ name: Release images
 
 # A tag vX.Y.Z publishes ghcr.io/othorg/{amd64,aarch64}-solar-visor-hub:X.Y.Z – the version solar_visor/config.yaml
 # names. Home Assistant pulls the image of that version; push the tag before (or with) the config change on main.
+# Once both images are out, a GitHub release X.Y.Z carries the dashboard card (solar-visor-card.js) – HACS installs
+# the card from the latest release (hacs.json).
 on:
   push:
     tags: ["v*"]
@@ -66,3 +68,28 @@ jobs:
           for i in $(seq 1 90); do curl -fs http://127.0.0.1:18080/health/live >/dev/null && break; sleep 2; done
           curl -fs http://127.0.0.1:18080/health/live
           docker rm -f sv
+
+  card:
+    needs: image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build the dashboard card (loader)
+        working-directory: web
+        run: npm ci --no-audit --no-fund && npx vite build -c vite.card.config.ts --mode loader
+      - name: Release notes from the changelog
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v head="## $v" '$0 == head {f = 1; next} /^## / {f = 0} f' solar_visor/CHANGELOG.md > build/notes.md
+          grep -q '[^[:space:]]' build/notes.md || { echo "no changelog entry for $v"; exit 1; }
+      - name: GitHub release with the card
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/card/solar-visor-card.js --verify-tag \
+            --title "Solar Visor Hub ${GITHUB_REF_NAME#v}" --notes-file build/notes.md

@@ -3,7 +3,8 @@
 Access (P0 finding §4, P4 detail plan §2):
 - only from the Supervisor's Ingress proxy (peer ``172.30.32.2``) – the identity headers are trusted from there only;
 - only for a Home Assistant administrator: ``X-Remote-User-Id`` must be an active admin in ``config/auth/list``
-  (cached briefly; unknown list → 503, never open);
+  (cached briefly; unknown list → 503, never open) – except the dashboard card's read routes (``/card/v1/``, GET), which
+  every active Home Assistant user may read (plan lovelace-card; the panel is therefore not admin-only);
 - writes only with ``X-Solar-Visor: 1`` (a browser cannot send it cross-site without a preflight Home Assistant does not
   grant – no CSRF over the HA session) and JSON bodies.
 Port A never carries any of this; port B keeps the app pairing and administration as before.
@@ -37,6 +38,8 @@ from . import __version__
 from .app import sanitize_validation_errors
 from .ui_admin import AdminContext
 from .ui_admin import register as register_admin
+from .ui_card import CardContext, is_card_path
+from .ui_card import register as register_card
 from .ui_ha import register as register_ha
 from .ui_plant import PlantEditing
 from .ui_plant import register as register_plant
@@ -49,6 +52,16 @@ USER_KEY = "solar_visor.user"
 WEB_DIR = Path(__file__).parent / "web"
 ADMIN_CACHE_S = 60.0
 ADMIN_STALE_MAX_S = 600.0       # a list that cannot be refreshed is used this long at most, then nobody gets in
+ADMINS_ONLY = "administrators only"
+# what a user who is no administrator sees when opening the panel (the panel is open to all for the dashboard card)
+ADMINS_ONLY_PAGE = ("<!doctype html><html lang=de><meta charset=utf-8>"
+                    "<meta name=viewport content='width=device-width,initial-scale=1'><title>Solar Visor</title>"
+                    "<style>body{font:16px system-ui,sans-serif;background:#111;color:#ddd;margin:0;padding:32px 20px}"
+                    "main{max-width:34em;margin:auto}h1{font-size:20px;color:#fff}</style><main>"
+                    "<h1>Solar Visor</h1><p>Die Einrichtung ist nur für Administratoren von Home Assistant.</p>"
+                    "<p>Das Energiefluss-Dashboard gibt es als Karte <code>custom:solar-visor-card</code> in jedem "
+                    "Home-Assistant-Dashboard.</p><p lang=en>Setup is for Home Assistant administrators only. The energy "
+                    "flow dashboard is available as the card <code>custom:solar-visor-card</code>.</p></main></html>")
 CSP = ("default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; "
        "connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'")
 
@@ -100,39 +113,50 @@ def _split(value: str) -> tuple[str, int]:
 Read = Callable[[dict[str, Any]], Awaitable[Any]]
 
 
-class AdminList:
-    """Active administrators of Home Assistant (``config/auth/list``), refreshed at most every minute. Only user ids
-    are kept – the list carries names and credential types, none of it is stored or logged."""
+class UserList:
+    """Active users of Home Assistant (``config/auth/list``) with their role, refreshed at most every minute. Only ids
+    and roles are kept – the list carries names and credential types, none of it is stored or logged. System users
+    (Supervisor, add-ons) are no people and get nothing."""
 
     def __init__(self, read: Read, now: Callable[[], float] = time.monotonic, max_age: float = ADMIN_CACHE_S,
                  stale_max: float = ADMIN_STALE_MAX_S) -> None:
         self._read, self._now, self._max_age, self._stale_max = read, now, max_age, stale_max
-        self._admins: frozenset[str] | None = None
+        self._roles: dict[str, str] | None = None
         self._at = 0.0
 
-    async def is_admin(self, user_id: str) -> bool | None:
-        """True/False, or None if the list cannot be read (the caller refuses with 503). While Home Assistant does not
-        answer, the last list holds for a few minutes (a short reconnect must not lock the administrator out) – a
-        demoted administrator keeps access at most that long (Codex P4 review N1)."""
-        if self._admins is None or self._now() - self._at > self._max_age:
+    async def role(self, user_id: str) -> str | None:
+        """``admin``, ``user``, ``""`` (no active user), or None if the list cannot be read (the caller refuses with
+        503). While Home Assistant does not answer, the last list holds for a few minutes (a short reconnect must not
+        lock anybody out) – a demoted or removed user keeps their access at most that long (Codex P4 review N1)."""
+        if self._roles is None or self._now() - self._at > self._max_age:
             try:
                 users = await self._read({"type": "config/auth/list"})
             except Exception as exc:   # noqa: BLE001 – no list, no access; the reason without content
-                log.warning("administrators of Home Assistant not readable: %s", type(exc).__name__)
-                if self._admins is None or self._now() - self._at > self._stale_max:
+                log.warning("users of Home Assistant not readable: %s", type(exc).__name__)
+                if self._roles is None or self._now() - self._at > self._stale_max:
                     return None
-                return user_id in self._admins
-            self._admins = frozenset(
-                u["id"] for u in users or [] if isinstance(u, dict) and isinstance(u.get("id"), str)
-                and u.get("is_active", True) and (u.get("is_owner") or "system-admin" in (u.get("group_ids") or [])))
+                return self._roles.get(user_id, "")
+            self._roles = {
+                u["id"]: "admin" if u.get("is_owner") or "system-admin" in (u.get("group_ids") or []) else "user"
+                for u in users or [] if isinstance(u, dict) and isinstance(u.get("id"), str)
+                and u.get("is_active", True) and not u.get("system_generated")}
             self._at = self._now()
-        return user_id in self._admins
+        return self._roles.get(user_id, "")
+
+    async def is_admin(self, user_id: str) -> bool | None:
+        role = await self.role(user_id)
+        return None if role is None else role == "admin"
 
 
-def _reply(status: int, detail: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    body = json.dumps({"detail": detail}).encode()
+def _reply(status: int, detail: str, page: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
+    """JSON refusal; the page itself refused to a user who is no administrator: a short explanation instead."""
+    if page and detail == ADMINS_ONLY:
+        body, kind = ADMINS_ONLY_PAGE.encode(), b"text/html; charset=utf-8"
+    else:
+        body, kind = json.dumps({"detail": detail}).encode(), b"application/json"
     return ({"type": "http.response.start", "status": status,
-             "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]},
+             "headers": [(b"content-type", kind), (b"content-length", str(len(body)).encode()),
+                         (b"cache-control", b"no-store")]},
             {"type": "http.response.body", "body": body})
 
 
@@ -167,7 +191,7 @@ class _Guard:
                     _header(scope, b"content-type") or "").split(";")[0].strip().lower() == "application/json":
                 refusal = (415, "JSON expected")
         if refusal is not None:
-            start, body = _reply(*refusal)
+            start, body = _reply(*refusal, page=scope.get("path") in ("/", "/index.html"))
             await send(start)
             await send(body)
             return
@@ -176,9 +200,12 @@ class _Guard:
 
 
 class IngressGuard(_Guard):
-    def __init__(self, app: Any, admins: AdminList, peer: str = INGRESS_PEER) -> None:
+    """Administrators get the whole interface; every other active Home Assistant user only reads the dashboard card's
+    routes (``/card/v1/``, GET) – the add-on's panel is open to all users for that (``panel_admin: false``)."""
+
+    def __init__(self, app: Any, users: UserList, peer: str = INGRESS_PEER) -> None:
         super().__init__(app)
-        self.admins, self.peer = admins, peer
+        self.users, self.peer = users, peer
 
     async def identity(self, scope: dict[str, Any]) -> tuple[dict[str, Any] | None, tuple[int, str] | None]:
         client = scope.get("client")
@@ -187,13 +214,18 @@ class IngressGuard(_Guard):
         user_id = _header(scope, b"x-remote-user-id")
         if not user_id:
             return None, (401, "no Home Assistant user")
-        admin = await self.admins.is_admin(user_id)
-        if admin is None:
-            return None, (503, "administrators of Home Assistant not readable")
-        if not admin:
-            return None, (403, "administrators only")
+        role = await self.users.role(user_id)
+        if role is None:
+            return None, (503, "users of Home Assistant not readable")
+        if not role:
+            return None, (403, "no active Home Assistant user")
+        card = is_card_path(scope.get("path") or "")
+        if card and scope["method"] not in ("GET", "HEAD"):
+            return None, (405, "the card only reads")
+        if role != "admin" and not card:
+            return None, (403, ADMINS_ONLY)
         name = _header(scope, b"x-remote-user-display-name") or _header(scope, b"x-remote-user-name")
-        return {"id": user_id, "name": name}, None
+        return {"id": user_id, "name": name, "admin": role == "admin"}, None
 
 
 class DevGuard(_Guard):
@@ -276,6 +308,7 @@ class UiContext:
     read: Read | None = None                      # Home Assistant (small reads) for sensor search and checks
     devices: Any = None                           # DeviceStore: pairing codes for the apps
     admin: AdminContext | None = None             # overview, history, devices and diagnostics
+    card: CardContext | None = None               # the dashboard card's read routes (every Home Assistant user)
 
 
 class SessionView(BaseModel):
@@ -356,7 +389,8 @@ def create_ui_app(ctx: UiContext) -> FastAPI:
         response.headers["Content-Security-Policy"] = CSP
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
-        if request.url.path.startswith("/api/"):
+        path = request.url.path
+        if path.startswith("/api/") or (is_card_path(path) and "cache-control" not in response.headers):
             response.headers["Cache-Control"] = "no-store"
         return response
 
@@ -383,6 +417,8 @@ def create_ui_app(ctx: UiContext) -> FastAPI:
     register_ha(app, ctx.read)
     if ctx.admin is not None:
         register_admin(app, ctx.admin)
+    if ctx.card is not None:
+        register_card(app, ctx.card, ctx.web_dir)
 
     @app.post("/api/pairing", response_model=PairingView)
     def pairing(body: PairingIn) -> PairingView:

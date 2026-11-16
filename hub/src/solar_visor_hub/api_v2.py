@@ -108,6 +108,20 @@ def _matches(if_none_match: str | None, etag: str) -> bool:
     return "*" in wanted or etag.removeprefix("W/") in wanted
 
 
+def snapshot_reply(snap: PlantSnapshot, response: Response, if_none_match: str | None) -> PlantSnapshot | Response:
+    """The snapshot with a weak ETag, or 304 when it did not change (read API and dashboard card share it)."""
+    # fingerprint without per-request timestamps so unchanged data yields 304
+    payload = snap.model_dump_json(exclude={"snapshot_id": True, "generated_at": True,
+                                            "metrics": {"__all__": {"observed_at"}}})
+    etag = 'W/"' + hashlib.sha256(payload.encode()).hexdigest()[:20] + '"'    # weak: gzip or identity
+    if _matches(if_none_match, etag):
+        return Response(status_code=304, headers={"ETag": etag, "Vary": "Accept-Encoding"})
+    response.headers["ETag"] = etag
+    response.headers["Vary"] = "Accept-Encoding"
+    response.headers["Cache-Control"] = "no-store"
+    return snap
+
+
 def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | None, journal: Journal | None = None,
              rscp: Any = None, timezone: Callable[[], str | None] | None = None,
              rscp_enabled: Callable[[], bool] | None = None,
@@ -138,17 +152,7 @@ def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | N
     @app.get(f"{base}/snapshot", response_model=PlantSnapshot)
     async def snapshot_v2(response: Response, if_none_match: str | None = Header(default=None),
                           _: Any = Depends(require_read)) -> PlantSnapshot | Response:
-        snap = plant_live().snapshot(datetime.now(UTC))
-        # fingerprint without per-request timestamps so unchanged data yields 304
-        payload = snap.model_dump_json(exclude={"snapshot_id": True, "generated_at": True,
-                                                "metrics": {"__all__": {"observed_at"}}})
-        etag = 'W/"' + hashlib.sha256(payload.encode()).hexdigest()[:20] + '"'    # weak: gzip or identity
-        if _matches(if_none_match, etag):
-            return Response(status_code=304, headers={"ETag": etag, "Vary": "Accept-Encoding"})
-        response.headers["ETag"] = etag
-        response.headers["Vary"] = "Accept-Encoding"
-        response.headers["Cache-Control"] = "no-store"
-        return snap
+        return snapshot_reply(plant_live().snapshot(datetime.now(UTC)), response, if_none_match)
 
     @app.get(f"{base}/diagnostics", response_model=PlantDiagnostics)
     async def diagnostics_v2(_: Any = Depends(require_read)) -> PlantDiagnostics:

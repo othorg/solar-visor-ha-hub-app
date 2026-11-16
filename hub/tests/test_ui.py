@@ -8,12 +8,12 @@ from fastapi.testclient import TestClient
 
 from solar_visor_hub.ui import (
     INGRESS_PEER,
-    AdminList,
     DevGuard,
     IngressGuard,
     UiBindError,
     UiContext,
     UiSettings,
+    UserList,
     create_ui_app,
     load_ui_bind,
 )
@@ -22,7 +22,8 @@ ADMIN, USER = "a1", "u1"
 USERS = [{"id": ADMIN, "name": "Ada", "is_active": True, "group_ids": ["system-admin"]},
          {"id": USER, "name": "Bob", "is_active": True, "group_ids": ["system-users"]},
          {"id": "gone", "is_active": False, "group_ids": ["system-admin"]},
-         {"id": "own", "is_active": True, "is_owner": True, "group_ids": []}]
+         {"id": "own", "is_active": True, "is_owner": True, "group_ids": []},
+         {"id": "sys", "is_active": True, "system_generated": True, "group_ids": ["system-admin"]}]
 
 
 class Peer:
@@ -53,7 +54,7 @@ def ui(tmp_path, peer=INGRESS_PEER, ha=None, web_dir=None, dev=False):
     ctx = UiContext(mode="plant", running_revision=3, stored_revision=lambda: 4,
                     settings=UiSettings(tmp_path / "ui.json"), web_dir=web_dir or tmp_path / "noweb")
     app = create_ui_app(ctx)
-    guarded = DevGuard(app) if dev else IngressGuard(app, AdminList((ha or Recorder()).read))
+    guarded = DevGuard(app) if dev else IngressGuard(app, UserList((ha or Recorder()).read))
     return TestClient(Peer(guarded, peer))
 
 
@@ -89,6 +90,7 @@ def test_only_the_ingress_proxy_and_only_administrators(tmp_path):
     assert c.get("/api/session", headers=h(USER)).status_code == 403                           # not an admin
     assert c.get("/api/session", headers=h("gone")).status_code == 403                         # deactivated
     assert c.get("/api/session", headers=h("own")).status_code == 200                          # owner
+    assert c.get("/api/session", headers=h("sys")).status_code == 403                          # Supervisor, add-ons
     r = c.get("/api/session", headers=h())
     assert r.status_code == 200 and r.json() == {"user": "Ada Lovelace", "mode": "plant", "version": r.json()["version"],
                                                  "running_revision": 3, "stored_revision": 4, "startup_error": None}
@@ -102,7 +104,7 @@ def test_without_the_administrator_list_nobody_gets_in(tmp_path):
 async def test_the_administrator_list_is_read_once_a_minute():
     now = [0.0]
     rec = Recorder()
-    admins = AdminList(rec.read, now=lambda: now[0])
+    admins = UserList(rec.read, now=lambda: now[0])
     assert await admins.is_admin(ADMIN) and not await admins.is_admin(USER)
     assert rec.calls == 1
     now[0] = 61.0

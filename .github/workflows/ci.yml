@@ -21,6 +21,9 @@ jobs:
       - name: Web interface – type check and tests
         working-directory: web
         run: npm ci --no-audit --no-fund && npm run typecheck && npm test
+      - name: Dashboard card – the loader builds
+        working-directory: web
+        run: npx vite build -c vite.card.config.ts --mode loader && test -s ../build/card/solar-visor-card.js
       - name: Hub – tests
         working-directory: hub
         run: uv sync --frozen && uv run pytest -q

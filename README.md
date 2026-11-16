@@ -16,13 +16,15 @@ It **never switches anything**: no service calls, no writes to Home Assistant, n
   point is assigned to a Home Assistant sensor in the web interface, with checks for units, signs and missing values.
 - **Overview**: live values of the plant and the connection to Home Assistant.
 - **Dashboard symbols**: a symbol per module (solar panel, house, battery, pylon, wallbox, motorhome, plug) for the
-  dashboard of the Solar Visor apps.
+  dashboard of the Solar Visor apps and the dashboard card.
+- **Dashboard card**: the energy flow of the Solar Visor apps as a Home Assistant dashboard card – tap a device to see
+  the history of its sensors (see below).
 - **History**: the app keeps finished days in its own archive (also after the recorder has purged them) and
   calculates energy per day, week, month and year from it and the Home Assistant recorder – shown in the Solar Visor
   apps; the web page shows the sources and the archive and can recalculate days. Unknown stays unknown – never 0.
 - **Apps**: a token-protected read API for the Solar Visor apps; pairing with a one-time code or QR code.
 - **Safe by design**: the web interface is only reachable through Home Assistant for administrators; the API ports are
-  switched off by default.
+  switched off by default. The dashboard card only reads.
 
 ## Requirements
 
@@ -47,6 +49,34 @@ Everything is set up in the web interface – there are no app options:
 2. **Data points** – all assigned sensors with their live value and the result of their check.
 3. **History** – data sources, the archive of finished days, recalculation.
 4. **Devices & diagnostics** – pairing for the apps, paired devices, connection tests.
+
+## Dashboard card
+
+The dashboard card shows the energy flow like the Solar Visor apps: live values, flowing balls, the battery level.
+Tapping a device opens the Home Assistant history of its sensors. The app must be installed and running – the card
+takes its data from it.
+
+Install the card in one of two ways:
+
+- **HACS**: *HACS* → ⋮ → *Custom repositories*, add `https://github.com/othorg/solar-visor-ha-hub-app` with the type
+  **Dashboard**, then download **Solar Visor Card**. HACS adds the dashboard resource itself.
+- **Manually**: download `solar-visor-card.js` from the
+  [latest release](https://github.com/othorg/solar-visor-ha-hub-app/releases/latest), copy it to
+  `/config/www/solar-visor-card.js` and add it under *Settings → Dashboards* → ⋮ → *Resources* as
+  `/local/solar-visor-card.js?v=0.3.0` (type *JavaScript module*). After replacing the file, raise the `v=` value.
+
+Then add the card to a dashboard (*Add card* → *Solar Visor*, or in YAML):
+
+```yaml
+type: custom:solar-visor-card
+hours_to_show: 24   # optional: period of the history graph in hours (default 24)
+# addon: 1a2b3c4d_solar_visor   # optional: only if the card does not find the app (slug from the app's address)
+```
+
+Every Home Assistant user can use the card: it reaches the app through Home Assistant (Ingress) with the rights of the
+signed-in user and only reads. That is why the **Solar Visor** sidebar entry is visible to all users; users who are not
+administrators see a short notice there instead of the web interface. The card itself comes from the app and updates
+with it – the file in `/config/www` only loads it.
 
 ## Ports
 

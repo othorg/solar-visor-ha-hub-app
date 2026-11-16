@@ -14,6 +14,7 @@ export default defineConfig({
   },
   server: {
     proxy: { "/api": "http://127.0.0.1:8099" },        // SOLAR_VISOR_UI_DEV_BIND of the local hub
+    fs: { allow: [".", "../contracts/fixtures"] },     // the card's parity test reads the apps' shared fixture
   },
   test: {
     environment: "jsdom",
