@@ -62,7 +62,8 @@ TestFlight – please open an issue in this repository.
 
 ## Inspiration
 
-Solar Visor was inspired by the OTRKY app. It is an independent project and not affiliated with OTRKY.
+Solar Visor was inspired by the app AutarkieManager by [OTRKY](https://www.otrky.com/). It is an independent project
+and not affiliated with OTRKY.
 
 ## Disclaimer
 

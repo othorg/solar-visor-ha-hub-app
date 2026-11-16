@@ -65,7 +65,8 @@ erhältlich – bitte ein Issue in diesem Repository eröffnen.
 
 ## Inspiration
 
-Solar Visor wurde von der App OTRKY inspiriert. Es ist ein unabhängiges Projekt und nicht mit OTRKY verbunden.
+Solar Visor wurde von der App AutarkieManager von [OTRKY](https://www.otrky.com/de/) inspiriert. Es ist ein
+unabhängiges Projekt und nicht mit OTRKY verbunden.
 
 ## Haftungsausschluss
 
