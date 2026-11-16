@@ -16,6 +16,8 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
   Datenpunkt wird in der Web-Oberfläche einem Home-Assistant-Sensor zugeordnet, mit Prüfung von Einheiten, Vorzeichen
   und fehlenden Werten.
 - **Übersicht**: Live-Werte der Anlage und die Verbindung zu Home Assistant.
+- **Dashboard-Symbole**: ein Symbol je Modul (Solarmodul, Haus, Batterie, Strommast, Wallbox, Wohnmobil, Stecker) für
+  das Dashboard der Solar-Visor-Apps.
 - **Historie**: Die App bewahrt abgeschlossene Tage in einem eigenen Archiv auf (auch wenn der Recorder sie gelöscht
   hat) und berechnet daraus und aus dem Home-Assistant-Recorder die Energie je Tag, Woche, Monat und Jahr – angezeigt
   in den Solar-Visor-Apps; die Web-Seite zeigt Quellen und Archiv und kann Tage neu berechnen. Unbekanntes bleibt
@@ -43,7 +45,7 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
 Alles wird in der Web-Oberfläche eingerichtet – die App hat keine Optionen:
 
 1. **Anlage** – die Module Ihrer Anlage einschalten, jedem Datenpunkt einen Home-Assistant-Sensor zuordnen (Vorschläge
-   kommen aus Ihrem Energie-Dashboard), die installierte PV-Leistung eintragen, prüfen und aktivieren.
+   kommen aus Ihrem Energie-Dashboard), ein Symbol wählen, die installierte PV-Leistung eintragen, prüfen und aktivieren.
 2. **Datenpunkte** – alle zugeordneten Sensoren mit Live-Wert und Prüfergebnis.
 3. **Historie** – Datenquellen, Archiv der abgeschlossenen Tage, Neuberechnung.
 4. **Geräte & Diagnose** – Kopplung der Apps, gekoppelte Geräte, Verbindungstests.

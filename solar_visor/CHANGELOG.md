@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Dashboard symbols: every module can get its own symbol in the web interface (*Plant* → *Dashboard symbol*):
+  solar panel, house, battery, power pylon, wallbox, motorhome, plug. The Solar Visor apps show it in their dashboard.
+- Note: a plant with a chosen symbol cannot be loaded by 0.2.0 any more.
+
 ## 0.2.0
 
 First public release.

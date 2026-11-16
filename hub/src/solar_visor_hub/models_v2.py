@@ -90,6 +90,7 @@ class PlantModuleInfo(_Strict):
     kind: str = Field(description="grid | pv | battery | wallbox | generic | consumption")
     name: str = Field(description="Name chosen by the user; changing it changes no id")
     balance: str | None = Field(default=None, description="generic: 'part_of_home' or 'beside_home'")
+    icon: str | None = Field(default=None, description="Dashboard symbol: solar, house, battery, grid, wallbox, camper, plug (the chosen one or the default of the kind; none for the measured consumption). Apps fall back to the kind for an unknown value.")
     points: list[PlantPointInfo]
     strings: list[PlantStringInfo] = Field(default_factory=list)
 

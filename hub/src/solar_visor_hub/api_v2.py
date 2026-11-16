@@ -36,7 +36,7 @@ from .models_v2 import (
     PlantTrust,
     PointRole,
 )
-from .plant import Kind, Plant, Point
+from .plant import DEFAULT_ICONS, Kind, Module, Plant, Point
 from .plant_live import CONSUMPTION, GENERATION, HOME, PlantLive
 
 NOT_CONFIGURED = "plant_not_configured"
@@ -52,6 +52,11 @@ def metric_ids(plant: Plant) -> list[str]:
     return sorted(ids)
 
 
+def module_icon(m: Module) -> str | None:
+    """The module's symbol: chosen, else the default of its kind; the measured consumption has none."""
+    return m.icon or DEFAULT_ICONS.get(m.kind)
+
+
 def build_capabilities(plant: Plant, timezone: str | None = None, rscp: bool = False,
                        history: bool = False, consumers: bool = False, compare: bool = False) -> PlantCapabilities:
     modules = []
@@ -59,7 +64,7 @@ def build_capabilities(plant: Plant, timezone: str | None = None, rscp: bool = F
         if m.kind is Kind.CONSUMPTION and not m.points:
             continue                # calculated total: a metric, not a module with a sensor
         modules.append(PlantModuleInfo(
-            id=m.id, kind=m.kind.value, name=m.name, balance=m.balance, points=_points(m.points),
+            id=m.id, kind=m.kind.value, name=m.name, balance=m.balance, icon=module_icon(m), points=_points(m.points),
             strings=[PlantStringInfo(id=s.id, name=s.name, points=_points(s.points)) for s in m.strings]))
     return PlantCapabilities(api_version=API_VERSION_2, hub_version=__version__, plant_revision=plant.revision,
                              timezone=timezone, modules=modules, metrics=metric_ids(plant),

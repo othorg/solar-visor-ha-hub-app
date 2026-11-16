@@ -15,6 +15,8 @@ It **never switches anything**: no service calls, no writes to Home Assistant, n
 - **Plant model**: grid, up to three PV generators (with strings), battery, wallbox and extra consumers – each data
   point is assigned to a Home Assistant sensor in the web interface, with checks for units, signs and missing values.
 - **Overview**: live values of the plant and the connection to Home Assistant.
+- **Dashboard symbols**: a symbol per module (solar panel, house, battery, pylon, wallbox, motorhome, plug) for the
+  dashboard of the Solar Visor apps.
 - **History**: the app keeps finished days in its own archive (also after the recorder has purged them) and
   calculates energy per day, week, month and year from it and the Home Assistant recorder – shown in the Solar Visor
   apps; the web page shows the sources and the archive and can recalculate days. Unknown stays unknown – never 0.
@@ -41,7 +43,7 @@ It **never switches anything**: no service calls, no writes to Home Assistant, n
 Everything is set up in the web interface – there are no app options:
 
 1. **Plant** – switch the modules of your plant on, assign a Home Assistant sensor to each data point (suggestions come
-   from your energy dashboard), enter the installed PV power, check and activate.
+   from your energy dashboard), choose a symbol, enter the installed PV power, check and activate.
 2. **Data points** – all assigned sensors with their live value and the result of their check.
 3. **History** – data sources, the archive of finished days, recalculation.
 4. **Devices & diagnostics** – pairing for the apps, paired devices, connection tests.

@@ -3432,6 +3432,18 @@
             "description": "generic: 'part_of_home' or 'beside_home'",
             "title": "Balance"
           },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Dashboard symbol: solar, house, battery, grid, wallbox, camper, plug (the chosen one or the default of the kind; none for the measured consumption). Apps fall back to the kind for an unknown value.",
+            "title": "Icon"
+          },
           "id": {
             "description": "Stable slot id: grid, pv_1…pv_3, battery, wallbox, generic_1…generic_3, consumption",
             "title": "Id",
@@ -5127,7 +5139,7 @@
   },
   "info": {
     "title": "Solar Visor Hub – public read API",
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
   "openapi": "3.1.0",
   "paths": {

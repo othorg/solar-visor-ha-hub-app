@@ -495,6 +495,17 @@ function ModuleCard(props: ModuleProps) {
               ))}
             </fieldset>
           )}
+          {spec.kind !== "consumption" && catalog.icons && (
+            <label>
+              {t("plant.icon")}
+              <select value={module.icon ?? ""} onChange={(e) => onChange(setModuleField(plant, spec.id, "icon", e.target.value))}>
+                <option value="">
+                  {t("plant.icon.default", { icon: t(`icon.${catalog.default_icons?.[spec.kind] ?? "plug"}` as TextKey) })}
+                </option>
+                {catalog.icons.map((i) => <option key={i} value={i}>{t(`icon.${i}` as TextKey)}</option>)}
+              </select>
+            </label>
+          )}
           {spec.kind === "generic" && (
             <label>
               {t("plant.balance")}

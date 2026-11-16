@@ -315,3 +315,19 @@ def test_installed_pv_power_is_optional_and_checked():
         with pytest.raises(PlantError) as e:
             parse({**MINIMAL, "pv_peak_w": bad})
         assert [(x.path, x.code) for x in e.value.problems] == [("pv_peak_w", "invalid_pv_peak")]
+
+
+def test_a_module_symbol_is_kept_validated_and_defaults_by_kind():
+    """Dashboard symbols (user decision 2026-11-16): optional per module, from a fixed list; unset = the kind's default."""
+    from solar_visor_hub.api_v2 import build_capabilities
+
+    raw = json.loads(json.dumps(MINIMAL))
+    raw["modules"]["pv_1"]["icon"] = "camper"
+    plant = parse(raw)
+    assert plant.modules["pv_1"].icon == "camper" and dump(plant)["modules"]["pv_1"]["icon"] == "camper"
+    assert "icon" not in dump(parse(MINIMAL))["modules"]["pv_1"]          # an old plant stays exactly as it was
+    caps = {m.id: m.icon for m in build_capabilities(plant).modules}
+    assert caps["pv_1"] == "camper" and caps["grid"] == "grid"
+    assert {m.id: m.icon for m in build_capabilities(parse(MINIMAL)).modules}["pv_1"] == "solar"
+    raw["modules"]["pv_1"]["icon"] = "rocket"
+    assert ("modules.pv_1.icon", "invalid_icon") in set(problems(raw))

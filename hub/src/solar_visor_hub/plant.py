@@ -130,6 +130,10 @@ MODULES: dict[str, Kind] = {
 ALWAYS_ON = frozenset({"grid", "pv_1", "consumption"})
 GRID_VARIANTS = ("signed", "split")
 GENERIC_BALANCES = ("part_of_home", "beside_home")
+# dashboard symbol of a module (user decision 2026-11-16); unset = the default of its kind (DEFAULT_ICONS)
+ICONS = ("solar", "house", "battery", "grid", "wallbox", "camper", "plug")
+DEFAULT_ICONS = {Kind.PV: "solar", Kind.GRID: "grid", Kind.BATTERY: "battery", Kind.WALLBOX: "wallbox",
+                 Kind.GENERIC: "plug"}
 WALLBOX_TRUST = ("none", "openwb_retained")
 RSCP_KEY = "e3dc_rscp"
 
@@ -168,6 +172,7 @@ class Module:
     variant: str | None = None              # grid
     balance: str | None = None              # generic
     trust: str | None = None                # wallbox
+    icon: str | None = None                 # chosen symbol (ICONS); None = default of the kind
 
 
 @dataclass(frozen=True)
@@ -361,7 +366,7 @@ def _module(mid: str, raw: Any, check: _Check) -> Module:
     if not isinstance(raw, dict):
         check.add(path, "not_an_object", "Modul muss ein Objekt sein")
         return Module(mid, kind, enabled=False)
-    allowed = {"points"} | ({"enabled", "name"} if kind is not Kind.CONSUMPTION else set())
+    allowed = {"points"} | ({"enabled", "name", "icon"} if kind is not Kind.CONSUMPTION else set())
     allowed |= {Kind.GRID: {"variant"}, Kind.PV: {"strings"}, Kind.WALLBOX: {"trust"},
                 Kind.GENERIC: {"balance"}}.get(kind, set())
     for key in sorted(set(raw) - allowed):
@@ -376,7 +381,11 @@ def _module(mid: str, raw: Any, check: _Check) -> Module:
         enabled = True
     name = "" if kind is Kind.CONSUMPTION else _name(raw.get("name"), f"{path}.name", check, required=enabled)
     points = _points(raw.get("points"), CATALOG[kind], f"{path}.points", check)
-    module = Module(mid, kind, enabled, name, points)
+    icon = raw.get("icon")
+    if icon is not None and icon not in ICONS:
+        check.add(f"{path}.icon", "invalid_icon", "unbekanntes Symbol")
+        icon = None
+    module = Module(mid, kind, enabled, name, points, icon=icon)
     given = set(raw["points"]) if isinstance(raw.get("points"), dict) else set()     # an invalid point is not "missing"
 
     if kind is Kind.GRID:
@@ -496,9 +505,11 @@ def dump(plant: Plant) -> dict[str, Any]:
             if points:
                 modules[m.id] = {"points": points}
             continue
-        if not (m.enabled or m.name or points or m.strings):
+        if not (m.enabled or m.name or points or m.strings or m.icon):
             continue
         out: dict[str, Any] = {"enabled": m.enabled, "name": m.name}
+        if m.icon is not None:
+            out["icon"] = m.icon
         if m.kind is Kind.GRID:
             out["variant"] = m.variant
         if m.kind is Kind.WALLBOX:

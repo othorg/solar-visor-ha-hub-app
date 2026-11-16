@@ -26,6 +26,7 @@ import {
   setPointField,
   type Catalog,
   type ModuleSpec,
+  type RawPlant,
 } from "./plant";
 import { PlantSection, RESTART_WAIT } from "./PlantSection";
 import App from "./App";
@@ -41,7 +42,17 @@ const PV1: ModuleSpec = { id: "pv_1", kind: "pv", always_on: true, strings: true
                           points: { power, energy_total: counter } };
 const PV2: ModuleSpec = { ...PV1, id: "pv_2", always_on: false };
 const CATALOG: Catalog = { modules: [GRID, PV1, PV2], string_points: {}, max_strings: 6, max_name: 40,
-                           grid_variants: ["signed", "split"], generic_balances: [], wallbox_trust: [] };
+                           grid_variants: ["signed", "split"], generic_balances: [], wallbox_trust: [],
+                           icons: ["solar", "camper"], default_icons: { pv: "solar" } };
+
+describe("module symbol", () => {
+  it("stores a chosen symbol and removes it again with the default", () => {
+    const p: RawPlant = { schema: 1, modules: { pv_1: { enabled: true, name: "Dach" } } };
+    const chosen = setModuleField(p, "pv_1", "icon", "camper");
+    expect(chosen.modules.pv_1!.icon).toBe("camper");
+    expect("icon" in setModuleField(chosen, "pv_1", "icon", "").modules.pv_1!).toBe(false);
+  });
+});
 
 afterEach(() => {
   cleanup();

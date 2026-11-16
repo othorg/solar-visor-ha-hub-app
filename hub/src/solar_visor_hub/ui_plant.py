@@ -38,7 +38,7 @@ log = logging.getLogger("solar_visor_hub.ui")
 # (contracts/ui_codes.json; a test compares this list with the sources)
 PROBLEM_CODES = (
     "domain_mismatch", "entity_counted_twice", "invalid_balance", "invalid_entity", "invalid_flag",
-    "invalid_freshness_from", "invalid_name", "invalid_profile", "invalid_pv_peak", "invalid_revision", "invalid_role",
+    "invalid_freshness_from", "invalid_icon", "invalid_name", "invalid_profile", "invalid_pv_peak", "invalid_revision", "invalid_role",
     "invalid_rscp_pv",
     "invalid_sign", "invalid_stale_after", "invalid_string_id", "invalid_strings", "invalid_trust", "invalid_valid_from",
     "invalid_variant", "legacy_not_representable", "legacy_profile_unavailable", "module_required", "name_missing", "not_an_object", "point_missing",

@@ -133,13 +133,13 @@ def legacy_mapping(plant: Plant, template: MappingConfig | None = None) -> Mappi
 
 
 def _comparable(raw: dict[str, Any]) -> dict[str, Any]:
-    """A plant without what v1 does not know at all and therefore cannot contradict: module names, validity dates,
-    the revision, and slots that are switched off (they deliver nothing)."""
+    """A plant without what v1 does not know at all and therefore cannot contradict: module names and symbols,
+    validity dates, the revision, and slots that are switched off (they deliver nothing)."""
     modules: dict[str, Any] = {}
     for mid, module in raw["modules"].items():
         if module.get("enabled") is False:
             continue
-        module = {k: v for k, v in module.items() if k != "name"}
+        module = {k: v for k, v in module.items() if k not in ("name", "icon")}
         groups = [module.get("points", {}), *(s["points"] for s in module.get("strings", []))]
         for points in groups:
             for point in points.values():

@@ -24,8 +24,10 @@ from .normalize import compatible_unit, normalize
 from .plant import (
     ALWAYS_ON,
     CATALOG,
+    DEFAULT_ICONS,
     GENERIC_BALANCES,
     GRID_VARIANTS,
+    ICONS,
     MAX_NAME,
     MAX_STRINGS,
     MODULES,
@@ -69,7 +71,8 @@ def catalog_view() -> dict[str, Any]:
                         "strings": kind is Kind.PV})
     return {"modules": modules, "string_points": {pid: _spec_view(s) for pid, s in STRING_POINTS.items()},
             "max_strings": MAX_STRINGS, "max_name": MAX_NAME, "grid_variants": list(GRID_VARIANTS),
-            "generic_balances": list(GENERIC_BALANCES), "wallbox_trust": list(WALLBOX_TRUST)}
+            "generic_balances": list(GENERIC_BALANCES), "wallbox_trust": list(WALLBOX_TRUST), "icons": list(ICONS),
+            "default_icons": {k.value: v for k, v in DEFAULT_ICONS.items()}}
 
 
 # --- what Home Assistant has ----------------------------------------------------------------------------------------

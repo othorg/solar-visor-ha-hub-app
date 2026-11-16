@@ -26,6 +26,8 @@ export interface Catalog {
   grid_variants: string[];
   generic_balances: string[];
   wallbox_trust: string[];
+  icons?: string[];                            // absent from a hub before the symbols
+  default_icons?: Record<string, string>;      // module kind → symbol when none is chosen
 }
 
 export interface RawPoint {
@@ -51,6 +53,7 @@ export interface RawModule {
   variant?: string;
   balance?: string;
   trust?: string;
+  icon?: string;
   points?: Record<string, RawPoint>;
   strings?: RawString[];
 }
@@ -137,10 +140,11 @@ function withModule(plant: RawPlant, id: string, change: (m: RawModule) => RawMo
   return { ...plant, modules: { ...plant.modules, [id]: change({ ...moduleOf(plant, id) }) } };
 }
 
-export function setModuleField(plant: RawPlant, id: string, field: "enabled" | "name" | "variant" | "balance" | "trust",
+export function setModuleField(plant: RawPlant, id: string, field: "enabled" | "name" | "variant" | "balance" | "trust" | "icon",
                                value: boolean | string): RawPlant {
   return withModule(plant, id, (m) => {
-    const next = { ...m, [field]: value };
+    const next: RawModule = { ...m, [field]: value };
+    if (field === "icon" && value === "") delete next.icon;           // "default": no choice stored
     if (field === "variant") {
       // points of the other variant would be invalid: they go, the chosen variant's stay
       const drop = value === "signed" ? ["import_power", "export_power"] : ["power"];
