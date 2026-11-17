@@ -14,7 +14,8 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
 
 - **Anlagenmodell**: Netz, bis zu drei PV-Erzeuger (mit Strings), Batterie, Wallbox und weitere Verbraucher – jeder
   Datenpunkt wird in der Web-Oberfläche einem Home-Assistant-Sensor zugeordnet, mit Prüfung von Einheiten, Vorzeichen
-  und fehlenden Werten.
+  und fehlenden Werten. Ein PV-Erzeuger mit eigenem Einspeisezähler lässt sich als *Volleinspeisung* markieren: sichtbar,
+  aber außerhalb der Hausbilanz.
 - **Übersicht**: der Energiefluss der Anlage wie in den Solar-Visor-Apps – ein Tipp auf ein Gerät zeigt seine
   aktuellen Werte – und die Verbindung zu Home Assistant.
 - **Dashboard-Symbole**: ein Symbol je Modul (Solarmodul, Haus, Batterie, Strommast, Wallbox, Wohnmobil, Stecker) für

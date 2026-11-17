@@ -21,6 +21,7 @@ export interface Module {
   id: string;
   kind: Kind;
   name: string;
+  /** Generic modules: `part_of_home` or `beside_home`; PV generators: `full_feed_in` or null (feeds home). */
   balance: string | null;
   symbol: SymbolName;
   points: PlantPoint[];
@@ -42,6 +43,15 @@ export function has(m: Module, point: string): boolean {
 /** A generic module inside home (its power is part of home's) – never added to the consumption again. */
 export function isPartOfHome(m: Module): boolean {
   return m.kind === "generic" && m.balance !== "beside_home";
+}
+
+/** `balance` of a PV generator with full feed-in. */
+export const FULL_FEED_IN = "full_feed_in";
+
+/** A PV generator with full feed-in: its own meter, straight into the public grid – shown with its node, value and
+ *  wire to the grid, never part of the home balance (generation, consumption, mesh). */
+export function isFullFeedIn(m: Module): boolean {
+  return m.kind === "pv" && m.balance === FULL_FEED_IN;
 }
 
 export class Topology {
@@ -80,7 +90,12 @@ export class Topology {
   }
 
   get grid(): Module | undefined { return this.modules.find((m) => m.kind === "grid"); }
-  get pvs(): Module[] { return this.modules.filter((m) => m.kind === "pv"); }
+  /** Every PV generator in slot order – the flow's PV row, colours and node lists. */
+  get allPvs(): Module[] { return this.modules.filter((m) => m.kind === "pv"); }
+  /** The PV generators feeding home in slot order: the home balance (generation, mesh). */
+  get pvs(): Module[] { return this.allPvs.filter((m) => !isFullFeedIn(m)); }
+  /** PV generators with full feed-in in slot order: own node and wire to the grid, never in the home balance. */
+  get feedInPvs(): Module[] { return this.allPvs.filter(isFullFeedIn); }
   get battery(): Module | undefined { return this.modules.find((m) => m.kind === "battery"); }
   get wallbox(): Module | undefined { return this.modules.find((m) => m.kind === "wallbox"); }
   get generics(): Module[] { return this.modules.filter((m) => m.kind === "generic"); }

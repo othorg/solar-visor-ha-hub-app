@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import codes from "../../contracts/ui_codes.json";
 import { DICTIONARIES } from "./i18n";
@@ -24,6 +24,8 @@ import {
   setModuleField,
   setPointEntity,
   setPointField,
+  hasFullFeedIn,
+  setFullFeedIn,
   type Catalog,
   type ModuleSpec,
   type RawPlant,
@@ -42,8 +44,8 @@ const PV1: ModuleSpec = { id: "pv_1", kind: "pv", always_on: true, strings: true
                           points: { power, energy_total: counter } };
 const PV2: ModuleSpec = { ...PV1, id: "pv_2", always_on: false };
 const CATALOG: Catalog = { modules: [GRID, PV1, PV2], string_points: {}, max_strings: 6, max_name: 40,
-                           grid_variants: ["signed", "split"], generic_balances: [], wallbox_trust: [],
-                           icons: ["solar", "camper"], default_icons: { pv: "solar" } };
+                           grid_variants: ["signed", "split"], generic_balances: [], pv_balances: ["full_feed_in"],
+                           wallbox_trust: [], icons: ["solar", "camper"], default_icons: { pv: "solar" } };
 
 describe("module symbol", () => {
   it("stores a chosen symbol and removes it again with the default", () => {
@@ -152,6 +154,100 @@ describe("plant helpers", () => {
     expect(formatValue(-300, "W")).toBe("-300 W");
     expect(formatValue(null, "W")).toBe("–");
     expect(formatValue(true, "bool", ["an", "aus"])).toBe("an");
+  });
+});
+
+describe("full feed-in", () => {
+  const dashboard = { "grid.import_energy": [{ entity_id: "sensor.meter_in", source: "energy_dashboard" as const }],
+                      "grid.export_energy": [{ entity_id: "sensor.meter_out", source: "energy_dashboard" as const }] };
+
+  it("is stored only when set – removing it removes the key", () => {
+    const p: RawPlant = { schema: 1, modules: { pv_1: { enabled: true, name: "PV" }, pv_2: { enabled: true, name: "WR2" } } };
+    const on = setFullFeedIn(p, "pv_2", true, {}).plant;
+    expect(on.modules.pv_2!.balance).toBe("full_feed_in");
+    expect(hasFullFeedIn(on, CATALOG)).toBe(true);
+    const off = setFullFeedIn(on, "pv_2", false, {}).plant;
+    expect("balance" in off.modules.pv_2!).toBe(false);                 // else the edit would look unsaved for ever
+    expect(off).toEqual(p);
+    expect(hasFullFeedIn(setModuleField(on, "pv_2", "enabled", false), CATALOG)).toBe(false);   // switched off
+  });
+
+  it("drops grid counters that came from the energy dashboard, keeps a sensor chosen otherwise", () => {
+    let p = setPointEntity(emptyPlant({ grid: "Netz", pv: "PV" }), "grid", "import_energy", counter, "sensor.meter_in");
+    p = setPointEntity(p, "grid", "export_energy", counter, "sensor.house_only_out");
+    p = setPointEntity(p, "grid", "power", power, "sensor.grid");
+    const r = setFullFeedIn(setModuleField(p, "pv_2", "enabled", true), "pv_2", true, dashboard);
+    expect(r.dropped).toEqual(["grid.import_energy"]);
+    expect(Object.keys(r.plant.modules.grid!.points!).sort()).toEqual(["export_energy", "power"]);
+    expect(setFullFeedIn(p, "pv_2", false, dashboard).dropped).toEqual([]);
+  });
+
+  it("leaves the grid counters empty when suggestions are taken over", () => {
+    const p = setFullFeedIn(setModuleField(emptyPlant({ grid: "Netz", pv: "PV" }), "pv_2", "enabled", true), "pv_2", true, {}).plant;
+    const after = applySuggestions(p, CATALOG, { ...dashboard, "grid.power": [{ entity_id: "sensor.grid", source: "energy_dashboard" }] }, {});
+    expect(after.modules.grid!.points).toEqual({ power: expect.objectContaining({ entity: "sensor.grid" }) });
+    const without = applySuggestions(emptyPlant({ grid: "Netz", pv: "PV" }), CATALOG, dashboard, {});
+    expect(without.modules.grid!.points!.import_energy!.entity).toBe("sensor.meter_in");      // no feed-in: as before
+    // a marked generator that a suggestion is about to switch on counts already
+    const parked = setModuleField(p, "pv_2", "enabled", false);
+    const switched = applySuggestions(parked, CATALOG, { ...dashboard, "pv_2.power": [{ entity_id: "sensor.wr2", source: "same_device" }] }, {});
+    expect(switched.modules.pv_2!.enabled).toBe(true);
+    expect(switched.modules.grid!.points ?? {}).not.toHaveProperty("import_energy");
+  });
+
+  function stubPlant(mode: string, plant: RawPlant, problems: unknown[] = []) {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url === "api/catalog") return Response.json(CATALOG);
+      if (url === "api/plant") return Response.json({ mode, active: plant, active_revision: 1, running_revision: 1, draft: null,
+                                                       problems: [], has_previous: false, startup_error: null });
+      if (url === "api/suggestions") return Response.json({ points: dashboard });
+      if (url === "api/check") return Response.json({ points: {} });
+      if (url === "api/plant/validate") return Response.json({ problems });
+      return new Response("", { status: 404 });
+    }));
+  }
+
+  const ACTIVE: RawPlant = { schema: 1, revision: 1, modules: {
+    grid: { enabled: true, name: "Netz", variant: "signed", points: {
+      power: { entity: "sensor.grid", unit: "W", role: "authoritative" },
+      import_energy: { entity: "sensor.meter_in", unit: "Wh", role: "cross_check" } } },
+    pv_1: { enabled: true, name: "PV", points: { power: { entity: "sensor.pv", unit: "W", role: "authoritative" } } },
+    pv_2: { enabled: true, name: "WR2", points: { power: { entity: "sensor.wr2", unit: "W", role: "authoritative" } } } } };
+
+  it("is offered per generator with the hint, drops the dashboard counter and names the new problem", async () => {
+    stubPlant("plant", ACTIVE, [{ path: "modules.pv_1.balance", code: "full_feed_in_needs_house_pv", message: "x" }]);
+    render(<I18nProvider language="de"><PlantSection /></I18nProvider>);
+    const pv2 = await screen.findByRole("region", { name: /WR2/ });
+    expect(within(pv2).getAllByText(/Der Netzsensor der Anlage darf diesen Erzeuger nicht messen/)).toHaveLength(1);
+    const mark = within(pv2).getByRole("radio", { name: /Volleinspeisung \(eigener Zähler/ }) as HTMLInputElement;
+    await waitFor(() => expect(mark.disabled).toBe(false));                         // once the suggestions are read
+    expect((within(pv2).getByRole("radio", { name: "Eigenverbrauch (speist ins Haus)" }) as HTMLInputElement).checked).toBe(true);
+    const grid = screen.getByRole("region", { name: /Netz/ });
+    expect(within(grid).queryByText(/Mit Volleinspeisung/)).toBeNull();
+    fireEvent.click(mark);
+    expect(await within(pv2).findByText(/Die Netz-Zähler aus dem Energie-Dashboard wurden entfernt/)).toBeTruthy();
+    expect(within(grid).getByText(/Mit Volleinspeisung: Zähler Bezug\/Einspeisung nur wählen/)).toBeTruthy();
+    expect(within(grid).queryByText("sensor.meter_in")).toBeNull();
+    expect(screen.getByText("Ungespeicherte Änderungen")).toBeTruthy();
+    expect(await screen.findByText(/Mindestens ein eingeschalteter PV-Erzeuger muss ins Haus speisen/)).toBeTruthy();
+  });
+
+  it("is hidden for the own plant and never offered for the E3/DC details", async () => {
+    stubPlant("plant_legacy", ACTIVE);
+    render(<I18nProvider language="en"><PlantSection /></I18nProvider>);
+    const pv2 = await screen.findByRole("region", { name: /WR2/ });
+    expect(within(pv2).queryByText("Connection")).toBeNull();
+    cleanup();
+    stubPlant("plant", setRscp(setFullFeedIn(ACTIVE, "pv_2", true, {}).plant, "pv_1"));
+    render(<I18nProvider language="en"><PlantSection /></I18nProvider>);
+    const rscp = await screen.findByRole("region", { name: /E3\/DC details/ });
+    expect(within(rscp).getAllByRole("option").map((o) => o.textContent)).toEqual(["PV"]);
+    cleanup();
+    stubPlant("plant", setRscp(setFullFeedIn(ACTIVE, "pv_2", true, {}).plant, "pv_2"));      // marked after the choice
+    render(<I18nProvider language="en"><PlantSection /></I18nProvider>);
+    const stale = await screen.findByRole("region", { name: /E3\/DC details/ });
+    expect((within(stale).getByRole("combobox") as HTMLSelectElement).value).toBe("");      // nothing preselected
+    expect((within(await screen.findByRole("region", { name: /WR2/ })).getByRole("radio", { name: /Full feed-in/ }) as HTMLInputElement).checked).toBe(true);
   });
 });
 

@@ -7,7 +7,11 @@ moved and is then deleted without touching this one. For the imported existing p
 
 Module rules:
 - switched off = known absence: the term leaves every sum, there is no node, edge or point;
-- switched on without a usable value = unknown: ``null`` in every value derived from it, never 0.
+- switched on without a usable value = unknown: ``null`` in every value derived from it, never 0;
+- a PV generator with full feed-in has its node, values, energy and its own edge into the grid (+ = into the grid),
+  but is never a term of generation, consumption, home or the residual: the grid sensor does not see it. Its unknown
+  or stale value therefore stays with it (an inverter that reports ``unavailable`` at night leaves the home balance
+  known).
 """
 
 from __future__ import annotations
@@ -225,9 +229,9 @@ class PlantLive:
         now = now or datetime.now(UTC)
         mods = self.plant.modules
         metrics = {mid: self._metric(ref, now) for mid, ref in self._refs.items()}
-        pv_power = [metrics[f"{m.id}.power"] for m in self.plant.active() if m.kind is Kind.PV]
+        pv_power = [metrics[f"{m.id}.power"] for m in self.plant.generators()]
 
-        # generation: all switched-on generators
+        # generation: all switched-on generators of the home (full feed-in has its own meter)
         gen_val = float(sum(_num(p) for p in pv_power)) if all(_num(p) is not None for p in pv_power) else None  # type: ignore[misc]
         generation = metrics[f"{GENERATION}.power"] = self._derived(
             f"{GENERATION}.power", gen_val, worst(*(p.state for p in pv_power)) if gen_val is not None else UNKNOWN,
@@ -258,7 +262,7 @@ class PlantLive:
             metrics[f"{CONSUMPTION}.power"] = cons
 
         metrics[f"{HOME}.power"] = self._home(metrics, cons, measured, now)
-        edges = self._edges(metrics, pv_power)
+        edges = self._edges(metrics)
         residual, comparable = self._residual(pv_power, grid_inputs, grid, battery, cons) if measured else (None, False)
         return PlantSnapshot(
             snapshot_id=f"{self.revision}-{uuid.uuid4().hex[:8]}", generated_at=now, plant_revision=self.plant.revision,
@@ -336,13 +340,15 @@ class PlantLive:
                    if m.kind is Kind.GENERIC and m.balance == "beside_home"]
         return [cons, *beside]
 
-    def _edges(self, metrics: dict[str, PlantMetric], pv_power: list[PlantMetric]) -> list[FlowEdge]:
+    def _edges(self, metrics: dict[str, PlantMetric]) -> list[FlowEdge]:
         def edge(node: str, a: str, b: str, metric_id: str) -> FlowEdge:
             p = metrics[metric_id]
             return FlowEdge(edge_id=node, from_node=a, to_node=b, power_w=_num(p), state=p.state, derived=p.derived)
 
         mods = self.plant.modules
-        edges = [edge(p.module, p.module, GENERATION, p.metric_id) for p in pv_power]
+        # in slot order: a generator of the home feeds generation, one with full feed-in the grid (+ into the grid)
+        edges = [edge(m.id, m.id, "grid" if m.full_feed_in else GENERATION, f"{m.id}.power")
+                 for m in self.plant.active() if m.kind is Kind.PV]
         edges.append(edge(GENERATION, GENERATION, BUS, f"{GENERATION}.power"))
         if mods["battery"].enabled:
             edges.append(edge("battery", BUS, "battery", "battery.power"))          # + charging
@@ -360,7 +366,8 @@ class PlantLive:
     @staticmethod
     def _residual(pv_power: list[PlantMetric], grid_inputs: list[PlantMetric], grid: PlantMetric,
                   battery: PlantMetric | None, cons: PlantMetric) -> tuple[float | None, bool]:
-        """Sources − sinks against the measured total consumption; never redistributed."""
+        """Sources − sinks of the home against the measured total consumption; never redistributed. ``pv_power``:
+        the generators of the home only (full feed-in is outside the grid sensor's view)."""
         measured = [*pv_power, *grid_inputs, *([battery] if battery is not None else []), cons]
         if any(_num(p) is None for p in (*measured, grid)):
             return None, False

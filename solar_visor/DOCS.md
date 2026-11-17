@@ -16,6 +16,20 @@ Open **Solar Visor** in the sidebar (or *Open web UI*). Everything is set up the
   Solar Visor apps).
 - **Devices & diagnostics** – pairing code and QR code for the apps, paired devices, connection tests.
 
+## Full feed-in
+
+A PV generator whose power goes through its own meter straight into the public grid is marked under *Plant* → PV
+generator → *Connection* → *Full feed-in*. It keeps its node, values, strings, energy and history but is never part of
+the home: generation, consumption, self-consumption and autarky are those of the home's generators, its energy is the
+extra category *full feed-in*.
+
+- Only if the plant's grid sensor does **not** measure the generator – otherwise leave it a normal PV generator.
+- At least one PV generator has to feed the home. The E3/DC details (RSCP) never belong to a full feed-in generator.
+- Live values follow at once, the energy history from the start of the next day; earlier days keep the plant of
+  their time (also after *Recalculate*). Best set it at the first setup.
+- Grid counters (import/export energy) only if they measure the home's connection alone, not the feed-in meter.
+- Update the Solar Visor apps first; 0.4.x cannot load such a plant.
+
 ## Dashboard card
 
 `custom:solar-visor-card` shows the energy flow in any dashboard, light or dark like Home Assistant; tapping a device
@@ -52,6 +66,20 @@ Optionen:
 - **Historie** – Datenquellen, Archiv der abgeschlossenen Tage, Neuberechnung (die Energie je Zeitraum zeigen die
   Solar-Visor-Apps).
 - **Geräte & Diagnose** – Kopplungscode und QR-Code für die Apps, gekoppelte Geräte, Verbindungstests.
+
+## Volleinspeisung
+
+Ein PV-Erzeuger, dessen Leistung über einen eigenen Zähler direkt ins öffentliche Netz geht, wird unter *Anlage* →
+PV-Erzeuger → *Einbindung* → *Volleinspeisung* markiert. Er behält Knoten, Werte, Strings, Energie und Historie, gehört
+aber nie zum Haus: Erzeugung, Verbrauch, Eigenverbrauch und Autarkie sind die der Erzeuger im Haus, seine Energie ist
+die eigene Kategorie *Volleinspeisung*.
+
+- Nur wenn der Netzsensor der Anlage den Erzeuger **nicht** misst – sonst bleibt er ein normaler PV-Erzeuger.
+- Mindestens ein PV-Erzeuger muss ins Haus speisen. Die E3/DC-Details (RSCP) gehören nie zu einem Volleinspeiser.
+- Live-Werte folgen sofort, die Energiehistorie ab dem nächsten Tagesbeginn; frühere Tage behalten die Anlage ihrer
+  Zeit (auch nach *Neu berechnen*). Am besten gleich bei der Ersteinrichtung setzen.
+- Netz-Zähler (Bezug/Einspeisung) nur, wenn sie allein den Hausanschluss messen, nicht den Zähler der Volleinspeisung.
+- Vorher die Solar-Visor-Apps aktualisieren; 0.4.x kann eine solche Anlage nicht laden.
 
 ## Dashboard-Karte
 

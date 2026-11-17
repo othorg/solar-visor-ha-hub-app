@@ -71,7 +71,7 @@ def card_sensors(plant: Plant) -> dict[str, list[CardSensor]]:
     generation: list[CardSensor] = []
     for m in plant.active():
         sensors = _module_sensors(m)
-        if m.kind is Kind.PV and (p := m.points.get("power")) is not None:
+        if m.kind is Kind.PV and not m.full_feed_in and (p := m.points.get("power")) is not None:
             generation.append(CardSensor(entity_id=p.entity, metric_id=f"{m.id}.power"))
         if sensors:
             nodes[m.id] = sensors

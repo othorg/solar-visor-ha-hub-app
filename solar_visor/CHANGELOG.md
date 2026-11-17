@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0
+
+- **Full feed-in**: a PV generator whose power goes through its own meter straight into the public grid can be marked
+  as such in the web interface (*Plant* → PV generator → *Connection* → *Full feed-in*). It stays visible – flow,
+  values, strings, energy and history – but never counts towards generation, consumption, home, self-consumption or
+  autarky; its energy appears as the extra category *full feed-in*. Requirement: the plant's grid sensor does not
+  measure this generator (otherwise it stays a normal PV generator). At least one PV generator has to feed the home.
+- The mark takes effect with the activation for the live values and from the start of the next day for the energy
+  history; earlier days are not recalculated with it, not even by *Recalculate*. Set it right at the setup – a plant
+  switched later shows the generator in the generation up to the switch and in the full feed-in from then on.
+- Update the Solar Visor apps before switching it on: older apps still count the generator into the home.
+- Setup: with full feed-in, grid counters from the energy dashboard are not taken over automatically (they may include
+  the feed-in meter); choose them only if they measure the home's connection alone, otherwise the grid power is used.
+- Note: 0.4.x cannot load a plant with full feed-in (unknown field – it starts in setup mode). Go back only with a Home
+  Assistant backup that restores the version and its data together.
+
 ## 0.4.1
 
 - Dashboard card and the web interface's overview follow Home Assistant's light or dark display. Both use the surface

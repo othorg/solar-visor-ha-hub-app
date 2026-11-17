@@ -8,7 +8,11 @@ Rules that the evaluation relies on:
 - a module that is switched off is a *known absence*: its term leaves the sums, it has no node, edge or points;
 - a module that is switched on but has no value is *unknown* – ``null``, never 0;
 - the catalogue below fixes unit and admissible roles of every point, the file still spells the role out so that a
-  wrong balance role is rejected instead of silently reinterpreted.
+  wrong balance role is rejected instead of silently reinterpreted;
+- a PV generator marked ``balance: "full_feed_in"`` feeds the public grid through its own meter: the plant's grid
+  sensor never sees it. It keeps its node, values, energy and strings but is never a term of the home balance
+  (generation, consumption, home, residual, supply, autarky, self-consumption) – ``Plant.generators()`` and
+  ``Plant.feed_in()`` are the one place that tells both apart.
 """
 
 from __future__ import annotations
@@ -39,7 +43,7 @@ ENTITY_ID = re.compile(r"^(?!.+__)(?!_)[\da-z_]+(?<!_)\.(?!_)[\da-z_]+(?<!_)$") 
 
 
 class Role(StrEnum):
-    AUTHORITATIVE = "authoritative"      # the value the balance is built from
+    AUTHORITATIVE = "authoritative"      # the value the balance is built from (full feed-in: its node and energy)
     SUBSET = "subset"                    # part of a consumer that is already counted (wallbox, extra consumer)
     CROSS_CHECK = "cross_check"          # second measurement of the same quantity – never added
     DETAIL = "detail"                    # shown, not part of any balance
@@ -130,6 +134,9 @@ MODULES: dict[str, Kind] = {
 ALWAYS_ON = frozenset({"grid", "pv_1", "consumption"})
 GRID_VARIANTS = ("signed", "split")
 GENERIC_BALANCES = ("part_of_home", "beside_home")
+FULL_FEED_IN = "full_feed_in"
+# PV: absent = feeds the home (the canonical default, never written); "full_feed_in" = own meter straight into the grid
+PV_BALANCES = (FULL_FEED_IN,)
 # dashboard symbol of a module (user decision 2026-11-16); unset = the default of its kind (DEFAULT_ICONS)
 ICONS = ("solar", "house", "battery", "grid", "wallbox", "camper", "plug")
 DEFAULT_ICONS = {Kind.PV: "solar", Kind.GRID: "grid", Kind.BATTERY: "battery", Kind.WALLBOX: "wallbox",
@@ -170,9 +177,14 @@ class Module:
     points: dict[str, Point] = field(default_factory=dict)
     strings: tuple[PvString, ...] = ()
     variant: str | None = None              # grid
-    balance: str | None = None              # generic
+    balance: str | None = None              # generic: GENERIC_BALANCES; pv: None (feeds the home) or PV_BALANCES
     trust: str | None = None                # wallbox
     icon: str | None = None                 # chosen symbol (ICONS); None = default of the kind
+
+    @property
+    def full_feed_in(self) -> bool:
+        """A PV generator behind its own meter: shown, never part of the home balance."""
+        return self.kind is Kind.PV and self.balance == FULL_FEED_IN
 
 
 @dataclass(frozen=True)
@@ -181,11 +193,20 @@ class Plant:
     modules: dict[str, Module]              # always all slots, in the order of MODULES
     profile: str | None = None
     rscp_pv: str | None = None              # PV slot whose strings name the E3/DC RSCP trackers
-    pv_peak_w: float | None = None          # installed PV power of all generators (scale of the apps' gauges)
+    pv_peak_w: float | None = None          # installed PV power of the generators of the home, without full feed-in
+                                            # (scale of the apps' gauges)
     schema: int = SCHEMA
 
     def active(self) -> list[Module]:
         return [m for m in self.modules.values() if m.enabled]
+
+    def generators(self) -> list[Module]:
+        """Switched-on PV generators that feed the home – the terms of every balance (generation, supply, …)."""
+        return [m for m in self.active() if m.kind is Kind.PV and not m.full_feed_in]
+
+    def feed_in(self) -> list[Module]:
+        """Switched-on PV generators with full feed-in: own node and energy, never a term of the home balance."""
+        return [m for m in self.active() if m.full_feed_in]
 
     def points(self) -> dict[str, Point]:
         """Metric id → point of every switched-on module: ``pv_1.power``, ``pv_2.string_1.voltage``."""
@@ -367,7 +388,7 @@ def _module(mid: str, raw: Any, check: _Check) -> Module:
         check.add(path, "not_an_object", "Modul muss ein Objekt sein")
         return Module(mid, kind, enabled=False)
     allowed = {"points"} | ({"enabled", "name", "icon"} if kind is not Kind.CONSUMPTION else set())
-    allowed |= {Kind.GRID: {"variant"}, Kind.PV: {"strings"}, Kind.WALLBOX: {"trust"},
+    allowed |= {Kind.GRID: {"variant"}, Kind.PV: {"strings", "balance"}, Kind.WALLBOX: {"trust"},
                 Kind.GENERIC: {"balance"}}.get(kind, set())
     for key in sorted(set(raw) - allowed):
         check.add(f"{path}.{key}", "unknown_field", "unbekanntes Feld")
@@ -401,7 +422,11 @@ def _module(mid: str, raw: Any, check: _Check) -> Module:
                 check.add(f"{path}.points.{pid}", "point_not_in_variant", "passt nicht zur gewählten Netz-Variante")
         _require(module, wanted, given, path, check)
     elif kind is Kind.PV:
-        module = replace(module, strings=_strings(raw.get("strings"), f"{path}.strings", check))
+        balance = raw.get("balance")
+        if balance is not None and balance not in PV_BALANCES:
+            check.add(f"{path}.balance", "invalid_balance", "full_feed_in oder weglassen (speist ins Haus)")
+            balance = None
+        module = replace(module, strings=_strings(raw.get("strings"), f"{path}.strings", check), balance=balance)
         _require(module, ("power",), given, path, check)
     elif kind is Kind.BATTERY:
         _require(module, ("power",), given, path, check)
@@ -465,9 +490,18 @@ def parse(raw: Any) -> Plant:
     rscp = raw_modules.get(RSCP_KEY)
     if rscp is not None:
         rscp_pv = rscp.get("pv") if isinstance(rscp, dict) and set(rscp) == {"pv"} else None
-        if not isinstance(rscp_pv, str) or rscp_pv not in modules or modules[rscp_pv].kind is not Kind.PV:
-            check.add(f"modules.{RSCP_KEY}.pv", "invalid_rscp_pv", "genau ein PV-Platz erwartet, z. B. pv_1")
+        if (not isinstance(rscp_pv, str) or rscp_pv not in modules or modules[rscp_pv].kind is not Kind.PV
+                or modules[rscp_pv].full_feed_in):
+            # the E3/DC trackers belong to the home's bus, never to a generator behind its own meter
+            check.add(f"modules.{RSCP_KEY}.pv", "invalid_rscp_pv",
+                      "genau ein PV-Platz im Haus erwartet (keine Volleinspeisung), z. B. pv_1")
             rscp_pv = None
+
+    # without a generator of the home every balance would be empty: at least one switched-on PV feeds the home
+    feed_in = [m for m in modules.values() if m.enabled and m.full_feed_in]
+    if feed_in and not any(m.enabled and m.kind is Kind.PV and not m.full_feed_in for m in modules.values()):
+        check.add(f"modules.{feed_in[0].id}.balance", "full_feed_in_needs_house_pv",
+                  "mindestens ein eingeschalteter PV-Erzeuger muss ins Haus speisen (ohne Volleinspeisung)")
 
     # one entity must not be counted twice: at most one authoritative or subset use in the whole plant
     counted: dict[str, str] = {}
@@ -505,7 +539,7 @@ def dump(plant: Plant) -> dict[str, Any]:
             if points:
                 modules[m.id] = {"points": points}
             continue
-        if not (m.enabled or m.name or points or m.strings or m.icon):
+        if not (m.enabled or m.name or points or m.strings or m.icon or (m.kind is Kind.PV and m.balance)):
             continue
         out: dict[str, Any] = {"enabled": m.enabled, "name": m.name}
         if m.icon is not None:
@@ -514,8 +548,8 @@ def dump(plant: Plant) -> dict[str, Any]:
             out["variant"] = m.variant
         if m.kind is Kind.WALLBOX:
             out["trust"] = m.trust
-        if m.kind is Kind.GENERIC:
-            out["balance"] = m.balance
+        if m.kind is Kind.GENERIC or (m.kind is Kind.PV and m.balance is not None):
+            out["balance"] = m.balance              # pv: only when set – the default stays out (legacy round trip)
         out["points"] = points
         if m.strings:
             out["strings"] = [{"id": s.id, "name": s.name, "points": {pid: _dump_point(p) for pid, p in s.points.items()}}

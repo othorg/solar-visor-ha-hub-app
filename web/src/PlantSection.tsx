@@ -11,7 +11,10 @@ import {
   emptyPlant,
   otherVariantPoints,
   formatValue,
+  FULL_FEED_IN,
+  hasFullFeedIn,
   isEnabled,
+  isFullFeedIn,
   metricOfPath,
   moduleOf,
   requiredPoints,
@@ -21,6 +24,7 @@ import {
   localToIso,
   removeString,
   RSCP_KEY,
+  setFullFeedIn,
   setModuleField,
   setPointEntity,
   setPointExtra,
@@ -95,6 +99,7 @@ export function PlantSection() {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [checks, setChecks] = useState<Record<string, CheckResult>>({});
   const [suggestions, setSuggestions] = useState<Record<string, Suggestion[]>>({});
+  const [suggestionsRead, setSuggestionsRead] = useState(false);     // marking full feed-in compares with them
   const [phase, setPhase] = useState<Phase>("idle");
   const [conflict, setConflict] = useState<Conflict>(null);
   const [error, setError] = useState<unknown>(null);
@@ -128,7 +133,8 @@ export function PlantSection() {
     } catch (e) {
       setError(e);
     }
-    get<{ points: Record<string, Suggestion[]> }>("suggestions").then((s) => setSuggestions(s.points), () => undefined);
+    get<{ points: Record<string, Suggestion[]> }>("suggestions").then((s) => setSuggestions(s.points), () => undefined)
+      .finally(() => setSuggestionsRead(true));
   }, []);
 
   useEffect(() => {
@@ -248,6 +254,8 @@ export function PlantSection() {
     <ModuleCard key={spec.id} spec={spec} module={moduleOf(plant, spec.id)} checks={checks} problems={byMetric}
                 onChange={setPlant} plant={plant} catalog={catalog} active={view.active as RawPlant | null}
                 retroOffered={view.mode === "plant"} retro={retro}
+                feedInOffered={view.mode !== "plant_legacy"} fullFeedIn={hasFullFeedIn(plant, catalog)}
+                suggestions={suggestions} suggestionsRead={suggestionsRead}
                 onRetro={(metric, day) => setRetro(({ [metric]: _old, ...rest }) => (day ? { ...rest, [metric]: day } : rest))}
                 onPick={(target) => setPicker({ module: spec.id, ...target })} />
   );
@@ -424,6 +432,10 @@ interface ModuleProps {
   active: RawPlant | null;
   retroOffered: boolean;
   retro: Record<string, string>;
+  feedInOffered: boolean;                 // not for the own plant (the existing calculation cannot express it)
+  fullFeedIn: boolean;                    // a switched-on generator of the plant feeds in fully
+  suggestions: Record<string, Suggestion[]>;
+  suggestionsRead: boolean;               // until then marking full feed-in could not drop the dashboard's counters
   checks: Record<string, CheckResult>;
   problems: Record<string, Problem[]>;
   onChange: (p: RawPlant) => void;
@@ -433,7 +445,15 @@ interface ModuleProps {
 
 function ModuleCard(props: ModuleProps) {
   const { spec, module, plant, catalog, active, retroOffered, retro, checks, problems, onChange, onRetro, onPick } = props;
+  const { feedInOffered, fullFeedIn, suggestions, suggestionsRead } = props;
   const { t } = useI18n();
+  const [dropped, setDropped] = useState<string[]>([]);
+  const feedInChoice = spec.kind === "pv" && feedInOffered && (catalog.pv_balances ?? []).includes(FULL_FEED_IN);
+  const markFeedIn = (on: boolean) => {
+    const r = setFullFeedIn(plant, spec.id, on, suggestions);
+    setDropped(r.dropped);
+    onChange(r.plant);
+  };
   const enabled = isEnabled(spec, module);
   const label = t(`module.${spec.id}` as TextKey);
   const required = requiredPoints(spec, module);
@@ -506,6 +526,23 @@ function ModuleCard(props: ModuleProps) {
               </select>
             </label>
           )}
+          {feedInChoice && (
+            <fieldset>
+              <legend>{t("plant.feed_in")}</legend>
+              <label className="radio">
+                <input type="radio" name={`${spec.id}-feed-in`} checked={!isFullFeedIn(module)} onChange={() => markFeedIn(false)} />
+                {t("plant.feed_in.home")}
+              </label>
+              <label className="radio">
+                <input type="radio" name={`${spec.id}-feed-in`} checked={isFullFeedIn(module)} onChange={() => markFeedIn(true)}
+                       disabled={!suggestionsRead && !isFullFeedIn(module)} />
+                {t("plant.feed_in.full_feed_in")}
+              </label>
+              <p className="hint">{t("plant.feed_in.hint")}</p>
+              {dropped.length > 0 && <p className="note" role="status">{t("plant.feed_in.dropped")}</p>}
+            </fieldset>
+          )}
+          {spec.kind === "grid" && fullFeedIn && <p className="hint">{t("plant.grid_feed_in_hint")}</p>}
           {spec.kind === "generic" && (
             <label>
               {t("plant.balance")}
@@ -608,7 +645,9 @@ function PvPeakCard({ plant, onChange }: { plant: RawPlant; onChange: (p: RawPla
 function RscpCard({ plant, catalog, onChange }: { plant: RawPlant; catalog: Catalog; onChange: (p: RawPlant) => void }) {
   const { t } = useI18n();
   const rscp = plant.modules[RSCP_KEY];
-  const pvs = catalog.modules.filter((m) => m.kind === "pv" && isEnabled(m, moduleOf(plant, m.id)));
+  // the E3/DC trackers belong to the home's bus: never a generator with full feed-in
+  const pvs = catalog.modules.filter((m) => m.kind === "pv" && isEnabled(m, moduleOf(plant, m.id))
+                                            && !isFullFeedIn(moduleOf(plant, m.id)));
   return (
     <section className="card" aria-labelledby="rscp-title">
       <header className="module-head">
@@ -623,7 +662,9 @@ function RscpCard({ plant, catalog, onChange }: { plant: RawPlant; catalog: Cata
         <div className="form">
           <label>
             {t("rscp.pv")}
-            <select value={rscp.pv} onChange={(e) => onChange(setRscp(plant, e.target.value))}>
+            {/* a generator marked full feed-in meanwhile is no option: the hub names the problem, nothing is preselected */}
+            <select value={pvs.some((m) => m.id === rscp.pv) ? rscp.pv : ""} onChange={(e) => onChange(setRscp(plant, e.target.value))}>
+              {!pvs.some((m) => m.id === rscp.pv) && <option value="" disabled>–</option>}
               {pvs.map((m) => <option key={m.id} value={m.id}>{moduleOf(plant, m.id).name || t(`module.${m.id}` as TextKey)}</option>)}
             </select>
           </label>

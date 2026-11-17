@@ -20,6 +20,11 @@ Statistics are written every period while a sensor is available, also when its v
 its last reading for one period only (the next row may still be compiled), never across a source outage.
 PV is zero while the sun is below the horizon (``nights``, from the location of Home Assistant): the night rule of the
 existing calculation, so an inverter that reports ``unavailable`` at night leaves no gap.
+
+A PV generator with full feed-in keeps its own category (``pv_n``, read and night-filled like any generator) but is no
+term of ``generation``, the consumption, ``supply.*`` or the KPIs; ``full_feed_in`` is the sum of those generators –
+derived, only on days whose plant has one. A plant without one computes exactly as before (no new category, same
+order, same source key).
 """
 
 from __future__ import annotations
@@ -213,15 +218,20 @@ def compute_day(plant: Plant, slots: Sequence[Slot], start: datetime, end: datet
                                                    {"signed_needs_raw"} if any(a <= sl.start < b for a, b in app)
                                                    else {NO_SOURCE}) for sl in slots]
 
-    # --- generators -------------------------------------------------------------------------------------------
-    generators = [m for m in plant.active() if m.kind is Kind.PV]
-    for m in generators:
+    # --- generators (every PV has its category; the home balance sees only those that feed the home) -------------
+    for m in plant.active():
+        if m.kind is not Kind.PV:
+            continue
         if f"{m.id}.energy_total" in points:
             counter(m.id, f"{m.id}.energy_total", Kind.PV)
         else:
             power(m.id, f"{m.id}.power", Kind.PV)
+    generators = plant.generators()
     cats["generation"] = _sum("generation", [(cats[m.id], 1) for m in generators])
     sources["generation"] = CategorySource("derived", None, res)
+    if feed_in := plant.feed_in():
+        cats["full_feed_in"] = _sum("full_feed_in", [(cats[m.id], 1) for m in feed_in])
+        sources["full_feed_in"] = CategorySource("derived", None, res)
 
     # --- grid ---------------------------------------------------------------------------------------------------
     grid = plant.modules["grid"]

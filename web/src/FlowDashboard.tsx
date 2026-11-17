@@ -12,7 +12,8 @@ import { formatValue } from "./plant";
 import { useTheme } from "./theme";
 
 /** Metrics shown for a node: its own (power first, then its other points, then its strings); generation: the total
- *  and the power of every generator. Only metrics the snapshot carries. */
+ *  and the power of every generator feeding home (one with full feed-in is no part of it). Only metrics the snapshot
+ *  carries. */
 export function nodeMetrics(node: string, snapshot: PlantSnapshot, topology: Topology): string[] {
   if (node === NODE.generation) {
     return [`${NODE.generation}.power`, ...topology.pvs.map((m) => `${m.id}.power`)].filter((id) => id in snapshot.metrics);

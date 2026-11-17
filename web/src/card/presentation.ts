@@ -4,7 +4,7 @@
 import { SPEED } from "./animation";
 import type { MetricState, MetricValue, PlantSnapshot } from "./model";
 import { num } from "./model";
-import { NODE, metric, type Topology } from "./topology";
+import { isFullFeedIn, NODE, metric, type Topology } from "./topology";
 
 export type Lang = "de" | "en";
 
@@ -40,11 +40,11 @@ const WORDS = {
   de: { import: "Bezug", export: "Einspeisung", charging: "lädt", discharging: "entlädt", soc: "SOC",
         disconnected: "getrennt", storage: "Akku", stale: "veraltet", implausible: "unplausibel",
         noStatus: "Status nicht verfügbar", plug: "Stecker", notConnected: "nicht verbunden", calculated: "berechnet",
-        unknown: "unbekannt", asOf: "Stand" },
+        unknown: "unbekannt", asOf: "Stand", fullFeedIn: "Volleinspeisung" },
   en: { import: "import", export: "export", charging: "charging", discharging: "discharging", soc: "SOC",
         disconnected: "disconnected", storage: "Battery", stale: "stale", implausible: "implausible",
         noStatus: "status unavailable", plug: "plugged in", notConnected: "not connected", calculated: "calculated",
-        unknown: "unknown", asOf: "as of" },
+        unknown: "unknown", asOf: "as of", fullFeedIn: "full feed-in" },
 };
 
 function direction(watts: number | null, positive: string, negative: string): string | null {
@@ -98,6 +98,10 @@ export function nodeText(id: string, topology: Topology, snapshot: PlantSnapshot
   };
   const details: string[] = [];
   switch (module?.kind) {
+    case "pv":
+      // marked, not a direction word: it always feeds the grid through its own meter
+      if (isFullFeedIn(module)) details.push(w.fullFeedIn);
+      break;
     case "grid": {
       const d = direction(watts, w.import, w.export);
       if (d) details.push(d);
@@ -156,8 +160,10 @@ export function usableSoc(snapshot: PlantSnapshot | null, metricId: string): num
   return point && (point.state === "ok" || point.state === "stale") ? num(point.value) : null;
 }
 
-/** Reading order of the nodes (keyboard, screen readers): totals and sources first, then the consumers. */
+/** Reading order of the nodes (keyboard, screen readers): totals and sources first, then the consumers; a generator
+ *  with full feed-in after the grid it feeds. */
 export function readingOrder(t: Topology): string[] {
-  return [NODE.generation, ...t.pvs.map((m) => m.id), ...(t.battery ? [t.battery.id] : []), "grid", NODE.consumption,
-          NODE.home, ...t.partOfHome.map((m) => m.id), ...t.besideHome.map((m) => m.id)];
+  return [NODE.generation, ...t.pvs.map((m) => m.id), ...(t.battery ? [t.battery.id] : []), "grid",
+          ...t.feedInPvs.map((m) => m.id), NODE.consumption, NODE.home, ...t.partOfHome.map((m) => m.id),
+          ...t.besideHome.map((m) => m.id)];
 }

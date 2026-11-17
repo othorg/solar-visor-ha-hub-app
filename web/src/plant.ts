@@ -25,6 +25,7 @@ export interface Catalog {
   max_name: number;
   grid_variants: string[];
   generic_balances: string[];
+  pv_balances?: string[];                      // absent from a hub before full feed-in
   wallbox_trust: string[];
   icons?: string[];                            // absent from a hub before the symbols
   default_icons?: Record<string, string>;      // module kind → symbol when none is chosen
@@ -68,6 +69,9 @@ export interface RawPlant {
 }
 
 export const RSCP_KEY = "e3dc_rscp";
+export const FULL_FEED_IN = "full_feed_in";
+/** Grid counters: with full feed-in they may be the feed-in meter – taken only on an explicit choice. */
+const GRID_COUNTERS = ["import_energy", "export_energy"];
 
 export interface CheckResult {
   status: "ok" | "info" | "warning" | "error";
@@ -145,6 +149,7 @@ export function setModuleField(plant: RawPlant, id: string, field: "enabled" | "
   return withModule(plant, id, (m) => {
     const next: RawModule = { ...m, [field]: value };
     if (field === "icon" && value === "") delete next.icon;           // "default": no choice stored
+    if (field === "balance" && value === "") delete next.balance;     // pv: feeding the home is the default, never stored
     if (field === "variant") {
       // points of the other variant would be invalid: they go, the chosen variant's stay
       const drop = value === "signed" ? ["import_power", "export_power"] : ["power"];
@@ -310,14 +315,51 @@ export function isoToLocal(iso: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** A PV generator behind its own meter: shown, never part of the home balance. */
+export function isFullFeedIn(module: RawModule): boolean {
+  return module.balance === FULL_FEED_IN;
+}
+
+/** True if a switched-on PV generator of the plant feeds in fully. */
+export function hasFullFeedIn(plant: RawPlant, catalog: Catalog): boolean {
+  return catalog.modules.some((spec) => spec.kind === "pv" && isEnabled(spec, moduleOf(plant, spec.id))
+                                         && isFullFeedIn(moduleOf(plant, spec.id)));
+}
+
+/** Marks a PV generator as full feed-in or as feeding the home (the default: the key goes). Marking it drops grid
+ *  counters that came from the energy dashboard's suggestions – they may be the feed-in meter, and the hub prefers
+ *  counters over the grid power (co-validate 2026-11-17): they come back only by an explicit choice.
+ *  Returns the plant and the metric ids dropped. */
+export function setFullFeedIn(plant: RawPlant, id: string, on: boolean,
+                              suggestions: Record<string, Suggestion[]>): { plant: RawPlant; dropped: string[] } {
+  let p = setModuleField(plant, id, "balance", on ? FULL_FEED_IN : "");
+  const dropped: string[] = [];
+  if (!on) return { plant: p, dropped };
+  for (const pid of GRID_COUNTERS) {
+    const entity = moduleOf(p, "grid").points?.[pid]?.entity;
+    if (entity && (suggestions[`grid.${pid}`] ?? []).some((s) => s.entity_id === entity && s.source === "energy_dashboard")) {
+      p = withModule(p, "grid", (m) => {
+        const { [pid]: _gone, ...rest } = m.points ?? {};
+        return { ...m, points: rest };
+      });
+      dropped.push(`grid.${pid}`);
+    }
+  }
+  return { plant: p, dropped };
+}
+
 /** Fills every empty point that has a suggestion with its first candidate; a module that is off is switched on only
- *  through its main point (``power``) – a suggested counter alone does not make a battery. Never overwrites a choice. */
+ *  through its main point (``power``) – a suggested counter alone does not make a battery. Never overwrites a choice.
+ *  With full feed-in (any marked generator) the grid counters stay empty: the dashboard's meter may be the feed-in one. */
 export function applySuggestions(plant: RawPlant, catalog: Catalog, suggestions: Record<string, Suggestion[]>,
                                  names: Record<string, string>): RawPlant {
   let p = plant;
+  // a marked generator counts even while it is off: a suggestion below may switch it on (Codex review F1)
+  const feedIn = catalog.modules.some((spec) => spec.kind === "pv" && isFullFeedIn(moduleOf(plant, spec.id)));
   for (const spec of catalog.modules) {
     const order = Object.keys(spec.points).sort((a, b) => Number(b === "power") - Number(a === "power"));
     for (const pid of order) {
+      if (feedIn && spec.kind === "grid" && GRID_COUNTERS.includes(pid)) continue;
       const first = suggestions[`${spec.id}.${pid}`]?.[0];
       const module = moduleOf(p, spec.id);
       if (!first || module.points?.[pid]) continue;

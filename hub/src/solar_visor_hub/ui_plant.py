@@ -37,7 +37,7 @@ log = logging.getLogger("solar_visor_hub.ui")
 # every problem code the plant model, the legacy rules and the activation report – the interface translates them
 # (contracts/ui_codes.json; a test compares this list with the sources)
 PROBLEM_CODES = (
-    "domain_mismatch", "entity_counted_twice", "invalid_balance", "invalid_entity", "invalid_flag",
+    "domain_mismatch", "entity_counted_twice", "full_feed_in_needs_house_pv", "invalid_balance", "invalid_entity", "invalid_flag",
     "invalid_freshness_from", "invalid_icon", "invalid_name", "invalid_profile", "invalid_pv_peak", "invalid_revision", "invalid_role",
     "invalid_rscp_pv",
     "invalid_sign", "invalid_stale_after", "invalid_string_id", "invalid_strings", "invalid_trust", "invalid_valid_from",

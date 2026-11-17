@@ -62,9 +62,11 @@ class PlantSnapshot(_Strict):
     connected: bool = Field(description="Home Assistant connection of the hub")
     metrics: dict[str, PlantMetric]
     edges: list[FlowEdge] = Field(description="edge_id = node on the module side; nodes: module ids plus "
-                                              "'generation', 'bus', 'consumption', 'home'")
+                                              "'generation', 'bus', 'consumption', 'home'. A PV edge ends at "
+                                              "'generation', one with full feed-in at 'grid' (+ into the grid)")
     balance_residual_w: float | None = Field(
-        description="Sources − sinks in W, never redistributed; null without a measured total consumption")
+        description="Sources − sinks of the home in W (without full feed-in), never redistributed; null without a "
+                    "measured total consumption")
     balance_comparable: bool = Field(description="False if the inputs are more than 15 s apart")
     modules: dict[str, PlantModuleStatus]
 
@@ -89,7 +91,9 @@ class PlantModuleInfo(_Strict):
     id: str = Field(description="Stable slot id: grid, pv_1…pv_3, battery, wallbox, generic_1…generic_3, consumption")
     kind: str = Field(description="grid | pv | battery | wallbox | generic | consumption")
     name: str = Field(description="Name chosen by the user; changing it changes no id")
-    balance: str | None = Field(default=None, description="generic: 'part_of_home' or 'beside_home'")
+    balance: str | None = Field(default=None, description="generic: 'part_of_home' or 'beside_home'; pv: "
+                                                          "'full_feed_in' (own meter straight into the grid, never "
+                                                          "part of the home balance), null = feeds the home")
     icon: str | None = Field(default=None, description="Dashboard symbol: solar, house, battery, grid, wallbox, camper, plug (the chosen one or the default of the kind; none for the measured consumption). Apps fall back to the kind for an unknown value.")
     points: list[PlantPointInfo]
     strings: list[PlantStringInfo] = Field(default_factory=list)
@@ -112,8 +116,9 @@ class PlantCapabilities(_Strict):
     modules: list[PlantModuleInfo]
     metrics: list[str] = Field(description="Every metric id the snapshot carries, including the calculated ones")
     features: PlantFeatures
-    pv_peak_w: float | None = Field(None, description="Installed power of all PV generators in W (scale of gauges); "
-                                                      "null when the user has not entered it")
+    pv_peak_w: float | None = Field(None, description="Installed power of the PV generators of the home in W, "
+                                                      "without full feed-in (scale of gauges); null when the user "
+                                                      "has not entered it")
     rscp_pv: str | None = Field(None, description="PV module whose strings are the E3/DC trackers of /v2/rscp")
 
 
@@ -227,9 +232,11 @@ class PlantEnergyPeriod(_Strict):
     plant_revision: int
     calculation_version: int
     buckets: dict[str, list[PlantEnergyBucket]] = Field(
-        description="Categories under v2 ids: '<module>' (pv_1, wallbox, generic_1), 'generation', 'consumption', "
-                    "'home', '<module>.<direction>' (grid.import, battery.charge), '<module>.net' (balance of a "
-                    "signed power), 'supply.<source>' (origin of the consumption), '<module>.string_<n>'")
+        description="Categories under v2 ids: '<module>' (pv_1, wallbox, generic_1), 'generation' (generation in "
+                    "the home balance), 'consumption', 'home', '<module>.<direction>' (grid.import, battery.charge), "
+                    "'<module>.net' (balance of a signed power), 'supply.<source>' (origin of the consumption; no "
+                    "generator with full feed-in), 'full_feed_in' (sum of the generators with full feed-in, only "
+                    "when the plant of the day has one), '<module>.string_<n>'")
     totals: PlantEnergyTotals
     kpis: PlantEnergyKpis
     complete: bool

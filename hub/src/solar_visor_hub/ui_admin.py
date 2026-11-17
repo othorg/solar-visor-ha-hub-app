@@ -85,7 +85,8 @@ class RecomputeIn(BaseModel):
 def register(app: FastAPI, ctx: AdminContext) -> None:
     @app.get("/api/overview")
     def overview() -> dict[str, Any]:
-        """Connections, the main live values with their state and the balance residual."""
+        """Connections, the main live values with their state and the balance residual of the home (a generator with
+        full feed-in is outside it)."""
         snap = ctx.snapshot() if ctx.snapshot is not None else None
         live = []
         if snap is not None:

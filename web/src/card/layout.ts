@@ -1,7 +1,7 @@
 // Dashboard flow layout – port of SolarVisorKit/PlantFlow.swift (PlantFlowLayout) and FlowLayout.swift
 // (FlowEdgeGeometry). Fixed places on the 440 × 956 reference raster; keep in step with Swift – the shared fixtures in
 // contracts/fixtures/flow/ check both.
-import { NODE, pvIndex, type Topology } from "./topology";
+import { isFullFeedIn, NODE, pvIndex, type Topology } from "./topology";
 
 export interface Point {
   x: number;
@@ -96,6 +96,9 @@ export class FlowLayout {
   readonly contentBounds: { x: number; y: number; width: number; height: number };
   /** Drawing order of the wires (the straight grid wire crosses the trunk last). */
   readonly wireOrder: string[];
+  /** Colour index of the generation mesh (GC, GB, GN): the first PV generator feeding home – never one with full
+   *  feed-in, whose power does not pass the generation junction. */
+  readonly meshPvIndex: number;
 
   constructor(topology: Topology, width: number) {
     const s = width / REFERENCE.width;
@@ -117,17 +120,28 @@ export class FlowLayout {
     const bat: Circle = { x: 220, y: 690, r: 58 }, home: Circle = { x: 350, y: 377, r: 54 };
     const lane = 8;
 
-    // PV row: one above the junction, two as before, three narrower
-    const pvs = topology.pvs;
-    const pvPlaces = pvs.length === 1 ? [{ x: 220, d: 120 }]
-      : pvs.length === 2 ? [{ x: 110, d: 120 }, { x: 330, d: 120 }]
+    // PV row: one above the junction, two as before, three narrower. Generators with full feed-in take the places on
+    // the left above the grid whatever their slot, then those feeding home – each in slot order; the colour stays with
+    // the slot. A full feed-in wire runs straight down into the grid, from further right first on a lane between the PV
+    // row and the generation junction.
+    const row = [...topology.feedInPvs, ...topology.pvs];
+    const pvPlaces = row.length === 1 ? [{ x: 220, d: 120 }]
+      : row.length === 2 ? [{ x: 110, d: 120 }, { x: 330, d: 120 }]
       : [{ x: 90, d: 104 }, { x: 220, d: 104 }, { x: 350, d: 104 }];
-    pvs.forEach((m, i) => {
+    const feedInLane = { x: 135, y: 254 };
+    row.forEach((m, i) => {
       const place = pvPlaces[i];
       if (!place) return;
       node(m.id, { kind: "pv", index: pvIndex(m.id) ?? 0 }, place.x, 188, place.d);
       const bottom = 188 + place.d / 2;
-      if (place.x === gen.x) {
+      if (isFullFeedIn(m)) {
+        if (place.x <= grid.x) {
+          straight(m.id, [[place.x, bottom], [place.x, above(grid, place.x - grid.x)]]);
+        } else {
+          straight(m.id, [[place.x, bottom], [place.x, feedInLane.y], [feedInLane.x, feedInLane.y],
+                          [feedInLane.x, above(grid, feedInLane.x - grid.x)]]);
+        }
+      } else if (place.x === gen.x) {
         straight(m.id, [[place.x, bottom], [gen.x, gen.y - gen.r]]);
       } else {
         const side = place.x < gen.x ? gen.x - gen.r : gen.x + gen.r;
@@ -183,8 +197,10 @@ export class FlowLayout {
     const bottom = Math.max(...all.map((n) => n.center.y / s + n.radius / s));
     this.contentBounds = { x: 0, y: top, width: REFERENCE.width, height: bottom - top };
     const consumers = [NODE.home, ...topology.besideHome.map((m) => m.id), ...topology.partOfHome.slice(0, 3).map((m) => m.id)];
-    this.wireOrder = [...pvs.map((m) => m.id), "GC", "GB", "GN", "BC", "BN", "NC", ...consumers]
+    this.wireOrder = [...topology.allPvs.map((m) => m.id), "GC", "GB", "GN", "BC", "BN", "NC", ...consumers]
       .filter((id) => this.edges.has(id));
+    const first = topology.pvs[0];
+    this.meshPvIndex = (first ? pvIndex(first.id) : null) ?? 0;
   }
 
   /** Balls along a wire with their identity: evenly spaced, `phase` = distance travelled. */

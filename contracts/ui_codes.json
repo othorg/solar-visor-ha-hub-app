@@ -15,6 +15,7 @@
   "problems": [
     "domain_mismatch",
     "entity_counted_twice",
+    "full_feed_in_needs_house_pv",
     "invalid_balance",
     "invalid_entity",
     "invalid_flag",

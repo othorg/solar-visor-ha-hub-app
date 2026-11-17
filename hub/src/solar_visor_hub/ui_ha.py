@@ -31,6 +31,7 @@ from .plant import (
     MAX_NAME,
     MAX_STRINGS,
     MODULES,
+    PV_BALANCES,
     STRING_POINTS,
     WALLBOX_TRUST,
     Kind,
@@ -71,7 +72,8 @@ def catalog_view() -> dict[str, Any]:
                         "strings": kind is Kind.PV})
     return {"modules": modules, "string_points": {pid: _spec_view(s) for pid, s in STRING_POINTS.items()},
             "max_strings": MAX_STRINGS, "max_name": MAX_NAME, "grid_variants": list(GRID_VARIANTS),
-            "generic_balances": list(GENERIC_BALANCES), "wallbox_trust": list(WALLBOX_TRUST), "icons": list(ICONS),
+            "generic_balances": list(GENERIC_BALANCES), "pv_balances": list(PV_BALANCES),     # any PV slot
+            "wallbox_trust": list(WALLBOX_TRUST), "icons": list(ICONS),
             "default_icons": {k.value: v for k, v in DEFAULT_ICONS.items()}}
 
 

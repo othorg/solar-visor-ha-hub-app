@@ -70,7 +70,8 @@ def series_plans(plant: Plant) -> dict[str, SeriesPlan]:
     """Every power series the plant can show: its power and percentage points plus what the hub calculates."""
     pts = plant.points()
     plans = {mid: SeriesPlan(p.unit, ((mid, 1),), False) for mid, p in pts.items() if p.unit in (Unit.W, Unit.PERCENT)}
-    gens = tuple((f"{m.id}.power", 1) for m in plant.active() if m.kind is Kind.PV)
+    # the home's generators only: a generator with full feed-in keeps its own series (pv_n.power) and no other
+    gens = tuple((f"{m.id}.power", 1) for m in plant.generators())
     plans["generation.power"] = SeriesPlan(Unit.W, gens, True)
     if plant.modules["grid"].variant == "split":
         plans["grid.power"] = SeriesPlan(Unit.W, (("grid.import_power", 1), ("grid.export_power", -1)), True)

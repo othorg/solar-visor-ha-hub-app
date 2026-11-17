@@ -102,7 +102,7 @@ class MetricPoint(_Strict):
 
 
 class FlowEdge(_Strict):
-    """Bus-model edge; ``power_w`` is signed relative to the edge's positive direction."""
+    """Bus-model edge; ``power_w`` is signed relative to the edge's positive direction (v2: full feed-in ends at grid)."""
 
     edge_id: str
     from_node: str

@@ -38,6 +38,29 @@ export function testSnapshot(revision = 3): PlantSnapshot {
   };
 }
 
+/** The second variant: a second PV generator with full feed-in (its own meter, edge `pv_2 → grid`), at noon above
+ *  the home's generator – the home's numbers (generation, consumption, grid) do not contain it. */
+export const FEED_IN_CAPABILITIES: PlantCapabilities = {
+  ...TEST_CAPABILITIES,
+  modules: [...TEST_CAPABILITIES.modules,
+            { id: "pv_2", kind: "pv", name: "Scheune", balance: "full_feed_in", points: [point("power", "W")], strings: [] }],
+  metrics: [...TEST_CAPABILITIES.metrics, "pv_2.power"],
+};
+
+export function feedInSnapshot(pv2: { value: number | null; state: PlantMetric["state"] } = { value: 4800, state: "ok" }):
+    PlantSnapshot {
+  const base = testSnapshot();
+  const edge = (id: string, from: string, to: string, power: number | null, state: PlantMetric["state"] = "ok") =>
+    ({ edge_id: id, from_node: from, to_node: to, power_w: power, state, derived: false });
+  return {
+    ...base,
+    metrics: { ...base.metrics, "pv_2.power": metric("pv_2.power", pv2.value, "W", pv2.state) },
+    edges: [edge("pv_1", "pv_1", "generation", 3000), edge("pv_2", "pv_2", "grid", pv2.value, pv2.state),
+            edge("battery", "bus", "battery", -400), edge("grid", "grid", "bus", -1200),
+            edge("consumption", "bus", "consumption", 1400), edge("home", "consumption", "home", 1400)],
+  };
+}
+
 export function testPlant(build = "b1", revision = 3): CardPlant {
   return { build, capabilities: { ...TEST_CAPABILITIES, plant_revision: revision },
            sensors: { pv_1: [{ entity_id: "sensor.pv", metric_id: "pv_1.power" }] } };

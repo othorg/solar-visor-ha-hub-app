@@ -1681,7 +1681,7 @@
       },
       "FlowEdge": {
         "additionalProperties": false,
-        "description": "Bus-model edge; ``power_w`` is signed relative to the edge's positive direction.",
+        "description": "Bus-model edge; ``power_w`` is signed relative to the edge's positive direction (v2: full feed-in ends at grid).",
         "properties": {
           "derived": {
             "default": false,
@@ -2285,7 +2285,7 @@
                 "type": "null"
               }
             ],
-            "description": "Installed power of all PV generators in W (scale of gauges); null when the user has not entered it",
+            "description": "Installed power of the PV generators of the home in W, without full feed-in (scale of gauges); null when the user has not entered it",
             "title": "Pv Peak W"
           },
           "rscp_pv": {
@@ -3019,7 +3019,7 @@
               },
               "type": "array"
             },
-            "description": "Categories under v2 ids: '<module>' (pv_1, wallbox, generic_1), 'generation', 'consumption', 'home', '<module>.<direction>' (grid.import, battery.charge), '<module>.net' (balance of a signed power), 'supply.<source>' (origin of the consumption), '<module>.string_<n>'",
+            "description": "Categories under v2 ids: '<module>' (pv_1, wallbox, generic_1), 'generation' (generation in the home balance), 'consumption', 'home', '<module>.<direction>' (grid.import, battery.charge), '<module>.net' (balance of a signed power), 'supply.<source>' (origin of the consumption; no generator with full feed-in), 'full_feed_in' (sum of the generators with full feed-in, only when the plant of the day has one), '<module>.string_<n>'",
             "title": "Buckets",
             "type": "object"
           },
@@ -3429,7 +3429,7 @@
                 "type": "null"
               }
             ],
-            "description": "generic: 'part_of_home' or 'beside_home'",
+            "description": "generic: 'part_of_home' or 'beside_home'; pv: 'full_feed_in' (own meter straight into the grid, never part of the home balance), null = feeds the home",
             "title": "Balance"
           },
           "icon": {
@@ -3682,7 +3682,7 @@
                 "type": "null"
               }
             ],
-            "description": "Sources − sinks in W, never redistributed; null without a measured total consumption",
+            "description": "Sources − sinks of the home in W (without full feed-in), never redistributed; null without a measured total consumption",
             "title": "Balance Residual W"
           },
           "connected": {
@@ -3691,7 +3691,7 @@
             "type": "boolean"
           },
           "edges": {
-            "description": "edge_id = node on the module side; nodes: module ids plus 'generation', 'bus', 'consumption', 'home'",
+            "description": "edge_id = node on the module side; nodes: module ids plus 'generation', 'bus', 'consumption', 'home'. A PV edge ends at 'generation', one with full feed-in at 'grid' (+ into the grid)",
             "items": {
               "$ref": "#/components/schemas/FlowEdge"
             },
@@ -5139,7 +5139,7 @@
   },
   "info": {
     "title": "Solar Visor Hub – public read API",
-    "version": "0.4.1"
+    "version": "0.5.0"
   },
   "openapi": "3.1.0",
   "paths": {

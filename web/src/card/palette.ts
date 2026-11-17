@@ -52,13 +52,14 @@ export function nodeColor(role: FlowRole, theme: Theme = "dark"): string {
   }
 }
 
-/** Static colour of a wire by the side it starts from. */
+/** Static colour of a wire by the side it starts from (generation: its first generator feeding home; a generator's own
+ *  wire – also one with full feed-in – in its slot colour). */
 export function edgeColor(id: string, layout: FlowLayout, theme: Theme = "dark"): string {
   const c = COLORS[theme];
   switch (id) {
     case "GC":
     case "GB":
-    case "GN": return c.pv[0];
+    case "GN": return pvColor(layout.meshPvIndex, theme);
     case "BC":
     case "BN": return c.battery;
     case "NC": return c.grid;

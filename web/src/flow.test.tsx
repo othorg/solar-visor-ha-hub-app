@@ -2,7 +2,7 @@
 // values, one status line below – on a synthetic plant.
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cardFetch, testSnapshot, TEST_CAPABILITIES } from "./card/testPlant";
+import { cardFetch, FEED_IN_CAPABILITIES, feedInSnapshot, testSnapshot, TEST_CAPABILITIES } from "./card/testPlant";
 import { Topology } from "./card/topology";
 import { metricLabel, nodeMetrics, nodeValue } from "./FlowDashboard";
 import { I18nProvider } from "./i18n";
@@ -29,6 +29,10 @@ describe("node values", () => {
     expect(nodeValue(0.2, "A", "en", ["yes", "no"])).toBe("0.2 A");
     expect(nodeValue("not_connected", "text", "de", ["ja", "nein"])).toBe("not_connected");
     expect(nodeValue(false, "bool", "de", ["ja", "nein"])).toBe("nein");
+    // a generator with full feed-in is no part of generation: its own node only
+    const feedIn = new Topology(FEED_IN_CAPABILITIES);
+    expect(nodeMetrics("generation", feedInSnapshot(), feedIn)).toEqual(["generation.power", "pv_1.power"]);
+    expect(nodeMetrics("pv_2", feedInSnapshot(), feedIn)).toEqual(["pv_2.power"]);
     const en = new Topology(TEST_CAPABILITIES, "en");               // every point in English, none in German
     for (const point of ["ac_power", "import_energy", "capacity", "voltage", "charging"]) {
       expect(en.metricName(`grid.${point}`)).not.toMatch(/[äöüß]|Leistung|Bezug|Kapazität|Spannung|Laden/);
@@ -56,7 +60,7 @@ describe("overview „Jetzt“", () => {
     await waitFor(() => expect(host.shadowRoot?.querySelector("svg")).not.toBeNull());
     expect(await screen.findByText("verbunden")).toBeTruthy();
     expect(screen.getByText(/Zeitzone: Europe\/Berlin/)).toBeTruthy();
-    expect(screen.getByText(/Bilanzrest: 35 W/)).toBeTruthy();
+    expect(screen.getByText(/Bilanzrest Haus: 35 W/)).toBeTruthy();
     expect(screen.getByText(/Ohne gültigen Wert: pv_1.string_2.power/)).toBeTruthy();
     expect(screen.queryByText("-1.20 kW")).toBeNull();                 // no table of live values any more
     expect(screen.getByText(/Einen Knoten antippen/)).toBeTruthy();

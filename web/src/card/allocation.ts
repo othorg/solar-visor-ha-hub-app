@@ -16,6 +16,7 @@ export function pvSource(index: number): Source {
 
 /** Live powers in W (battery + = charging, grid + = import); null = not trusted now; absent = no such module. */
 export interface FlowInputs {
+  /** PV generators feeding home. */
   pv: Record<string, number | null>;
   hasBattery: boolean;
   battery: number | null;
@@ -25,6 +26,8 @@ export interface FlowInputs {
   beside: Record<string, number | null>;
   inside: Record<string, number | null>;
   assumedZero: string[];
+  /** PV generators with full feed-in: only their own wire to the grid, never part of the mesh (absent = none). */
+  feedIn?: Record<string, number | null>;
 }
 
 export interface WireFlow {
@@ -49,13 +52,15 @@ export function inputsFromSnapshot(snapshot: PlantSnapshot | null, topology: Top
   for (const m of topology.besideHome) beside[m.id] = assumed.includes(m.id) ? 0 : ok(m.id, metric(m, "power"));
   const pv: Record<string, number | null> = {};
   for (const m of topology.pvs) pv[m.id] = ok(m.id, metric(m, "power"));
+  const feedIn: Record<string, number | null> = {};
+  for (const m of topology.feedInPvs) feedIn[m.id] = ok(m.id, metric(m, "power"));
   const inside: Record<string, number | null> = {};
   for (const m of topology.partOfHome) inside[m.id] = ok(m.id, metric(m, "power"));
   const battery = topology.battery;
   return {
     pv, hasBattery: battery !== undefined, battery: battery ? ok(battery.id, metric(battery, "power")) : null,
     grid: ok("grid", "grid.power"), consumption: ok(NODE.consumption, "consumption.power"),
-    home: ok(NODE.home, "home.power"), beside, inside, assumedZero: assumed,
+    home: ok(NODE.home, "home.power"), beside, inside, assumedZero: assumed, feedIn,
   };
 }
 
@@ -84,10 +89,15 @@ function scaled(shares: Shares, f: number): Shares {
 
 /** Same convention as the hub (supply_slot): consumption is served by grid import first, then battery discharge, the
  *  rest directly by generation; remaining generation charges the battery, then is exported; remaining battery power is
- *  exported, remaining grid import charges the battery. An unknown value leaves its wires out (no balls). */
+ *  exported, remaining grid import charges the battery. An unknown value leaves its wires out (no balls). A generator
+ *  with full feed-in carries only its own power to the grid – never part of the mesh, its unknown value loses only its
+ *  own wire. */
 export function wires(x: FlowInputs): Record<string, WireFlow> {
   const out: Record<string, WireFlow> = {};
   for (const [id, value] of Object.entries(x.pv)) {
+    if (value !== null) out[id] = { powerW: Math.max(0, value), shares: { [source(id)]: 1 } };
+  }
+  for (const [id, value] of Object.entries(x.feedIn ?? {})) {
     if (value !== null) out[id] = { powerW: Math.max(0, value), shares: { [source(id)]: 1 } };
   }
   const besideValues = Object.values(x.beside);
@@ -158,7 +168,8 @@ export function wires(x: FlowInputs): Record<string, WireFlow> {
   return out;
 }
 
-/** Hub edges a wire is made of: the mesh wires share PV, battery, grid and consumption; a consumer only its own. */
+/** Hub edges a wire is made of: the mesh wires share the generators feeding home, battery, grid and consumption; a
+ *  consumer or a generator with full feed-in only its own edge. */
 export function inputEdges(wireId: string, topology: Topology): string[] {
   if (MESH_WIRES.includes(wireId)) {
     return [...topology.pvs.map((m) => m.id), ...(topology.battery ? [topology.battery.id] : []), "grid", NODE.consumption];
