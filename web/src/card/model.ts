@@ -74,6 +74,36 @@ export interface PlantSnapshot {
   modules: Record<string, { state: string; last_seen_at: string | null }>;
 }
 
+/** Statistics of one column [t, t + resolution) of a power history. */
+export interface PowerPoint {
+  t: string;
+  mean: number | null;
+  min: number | null;
+  max: number | null;
+  coverage: number;
+  estimated?: number;
+  applicable?: number;
+}
+
+export interface PlantPowerSeries {
+  series_id: string;
+  unit: string;
+  derived: boolean;
+  resolution_s: number;
+  source: string;
+  points: PowerPoint[];
+  outages?: { start: string; end: string }[];
+}
+
+/** `/card/v1/history/<node>`: the hub's calculated power of a node without sensors (models_v2.PlantPowerResponse). */
+export interface PlantPowerResponse {
+  start: string;
+  end: string;
+  timezone: string;
+  calculation_version: number;
+  series: PlantPowerSeries[];
+}
+
 /** The number of a metric value, if it is one. */
 export function num(v: MetricValue | undefined): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;

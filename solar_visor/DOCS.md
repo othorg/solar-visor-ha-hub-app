@@ -18,7 +18,8 @@ Open **Solar Visor** in the sidebar (or *Open web UI*). Everything is set up the
 
 ## Dashboard card
 
-`custom:solar-visor-card` shows the energy flow in any dashboard; tapping a device opens the history of its sensors.
+`custom:solar-visor-card` shows the energy flow in any dashboard, light or dark like Home Assistant; tapping a device
+opens the history of its sensors (*Home*: its calculated power of today).
 Install it with HACS (custom repository, type *Dashboard*) or from the release file `solar-visor-card.js` – see the
 README of the repository. Every Home Assistant user can use the card, so the sidebar entry is visible to all users;
 users who are not administrators see a notice there.
@@ -54,8 +55,8 @@ Optionen:
 
 ## Dashboard-Karte
 
-`custom:solar-visor-card` zeigt den Energiefluss in jedem Dashboard; ein Tipp auf ein Gerät öffnet den Verlauf seiner
-Sensoren. Installation über HACS (benutzerdefiniertes Repository, Typ *Dashboard*) oder aus der Release-Datei
+`custom:solar-visor-card` zeigt den Energiefluss in jedem Dashboard, hell oder dunkel wie Home Assistant; ein Tipp auf
+ein Gerät öffnet den Verlauf seiner Sensoren (*Zuhause*: seine berechnete Leistung von heute). Installation über HACS (benutzerdefiniertes Repository, Typ *Dashboard*) oder aus der Release-Datei
 `solar-visor-card.js` – siehe README des Repositorys. Jeder Home-Assistant-Benutzer kann die Karte nutzen, deshalb ist
 der Seitenleisten-Eintrag für alle Benutzer sichtbar; wer kein Administrator ist, sieht dort einen Hinweis.
 

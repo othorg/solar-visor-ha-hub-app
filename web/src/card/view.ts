@@ -6,7 +6,7 @@ import { FlowAnimator, flowWires, SPEED } from "./animation";
 import { iconMarkup, type Level } from "./icons";
 import { EdgeGeometry, FlowLayout, isJunction, type FlowNode, type Point } from "./layout";
 import type { PlantSnapshot } from "./model";
-import { edgeColor, nodeColor, sourceColor } from "./palette";
+import { COLORS, edgeColor, nodeColor, sourceColor, type Theme } from "./palette";
 import { glowLevel, nodeText, readingOrder, usableSoc } from "./presentation";
 import type { CardSensor } from "./api";
 import type { CardState } from "./panel";
@@ -19,6 +19,8 @@ const HAS_SENSORS: Clickable = (id, sensors) => (sensors[id]?.length ?? 0) > 0;
 
 export interface View {
   render(state: CardState, topology: Topology | null, t: Texts): void;
+  /** Dark or light surface (Home Assistant's card in that mode) – redrawn at once. */
+  setTheme(theme: Theme): void;
   notice(text: string): void;
   destroy(): void;
 }
@@ -30,18 +32,30 @@ let instances = 0;
 
 export const VIEW_CSS = `
 :host { display: block; }
-.sv { background: #000; color: #fff; border-radius: var(--ha-card-border-radius, 12px); overflow: hidden;
+/* The surface of Home Assistant's cards (theme variables) in both modes, framed like them (user decision 2026-11-17);
+   without a theme black (dark, as the app dashboard) or white. --sv-paper fills the rings and cut-outs – a plain colour
+   (a card background may be a gradient, which SVG cannot fill with). */
+.sv { --sv-surface: var(--ha-card-background, var(--card-background-color, #000));
+  --sv-paper: var(--card-background-color, #000); --sv-ink: #fff;
+  --sv-head: rgba(255,255,255,0.8); --sv-notice: #f5c542; --sv-empty: rgba(255,255,255,0.85);
+  --sv-border: var(--ha-card-border-color, var(--divider-color, rgba(255,255,255,0.12)));
+  background: var(--sv-surface); color: var(--sv-ink); border-radius: var(--ha-card-border-radius, 12px); overflow: hidden;
+  border: var(--ha-card-border-width, 1px) solid var(--sv-border); box-shadow: var(--ha-card-box-shadow, none);
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; position: relative; }
-.sv-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px 0; font-size: 12px; color: rgba(255,255,255,0.8);
+.sv.light { --sv-surface: var(--ha-card-background, var(--card-background-color, #fff));
+  --sv-paper: var(--card-background-color, #fff); --sv-ink: #1c1f24;
+  --sv-head: rgba(0,0,0,0.62); --sv-notice: #8a5a00; --sv-empty: rgba(0,0,0,0.75);
+  --sv-border: var(--ha-card-border-color, var(--divider-color, #e0e0e0)); }
+.sv-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px 0; font-size: 12px; color: var(--sv-head);
   font-variant-numeric: tabular-nums; min-height: 20px; }
 .sv-head .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .sv-flow { display: block; width: 100%; height: auto; }
 .sv-flow text { font-variant-numeric: tabular-nums; }
 .sv-hit { fill: transparent; cursor: pointer; outline: none; }
-.sv-hit:focus-visible { stroke: #fff; stroke-width: 2; stroke-dasharray: 4 3; }
+.sv-hit:focus-visible { stroke: var(--sv-ink); stroke-width: 2; stroke-dasharray: 4 3; }
 .sv-hit.none { cursor: default; }
-.sv-notice { color: #f5c542; font-size: 12px; padding: 0 14px 10px; }
-.sv-empty { padding: 28px 16px; color: rgba(255,255,255,0.85); text-align: center; font-size: 14px; }
+.sv-notice { color: var(--sv-notice); font-size: 12px; padding: 0 14px 10px; }
+.sv-empty { padding: 28px 16px; color: var(--sv-empty); text-align: center; font-size: 14px; }
 `;
 
 function el<K extends keyof SVGElementTagNameMap>(name: K, attrs: Record<string, string | number> = {}): SVGElementTagNameMap[K] {
@@ -77,10 +91,11 @@ function reducedMotion(): boolean {
 }
 
 export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => void,
-                           clickableNode: Clickable = HAS_SENSORS): View {
+                           clickableNode: Clickable = HAS_SENSORS, theme0: Theme = "dark"): View {
   const prefix = `sv${++instances}`;
+  let theme = theme0;
   const box = document.createElement("div");
-  box.className = "sv";
+  box.className = theme === "light" ? "sv light" : "sv";
   const head = document.createElement("div");
   head.className = "sv-head";
   const dot = document.createElement("span");
@@ -167,7 +182,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       while (pool.childElementCount > balls.length * 2) pool.lastElementChild?.remove();
       balls.forEach((b, i) => {
         const source = animator.colour(id, b.identity);
-        const color = source ? sourceColor(source) : edgeColor(id, layout as FlowLayout);
+        const color = source ? sourceColor(source, theme) : edgeColor(id, layout as FlowLayout, theme);
         const halo = pool.children[2 * i] as SVGCircleElement, core = pool.children[2 * i + 1] as SVGCircleElement;
         for (const c of [halo, core]) {
           c.setAttribute("cx", b.point.x.toFixed(2));
@@ -200,7 +215,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       const flow = wires[id];
       const active = Math.abs(flow?.powerW ?? 0) >= SPEED.offThresholdW;
       const dashed = stale || hasStaleInput(id, snapshot, topology, assumed);
-      const color = edgeColor(id, L);
+      const color = edgeColor(id, L, theme);
       gWires.append(el("path", { d: pathData(geo.points), fill: "none", stroke: color, "stroke-opacity": active ? 0.75 : 0.3,
                                  "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round",
                                  ...(dashed ? { "stroke-dasharray": "4 4" } : {}) }));
@@ -208,7 +223,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
     }
 
     for (const node of L.nodes.values()) {
-      const color = nodeColor(node.role);
+      const color = nodeColor(node.role, theme);
       const op = stale ? 0.5 : 1;
       const g = glowLevel(node.id, topology, snapshot, stale);
       const { x, y } = node.center, r = node.radius;
@@ -222,7 +237,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       defs.append(filter(glow, 4 + 4 * g));
       gNodes.append(el("circle", { cx: x, cy: y, r, fill: "none", stroke: color, "stroke-opacity": (0.35 + 0.45 * g) * op,
                                    "stroke-width": 4 + 4 * g, filter: `url(#${glow})` }));
-      gNodes.append(el("circle", { cx: x, cy: y, r, fill: "#000", stroke: color, "stroke-opacity": op,
+      gNodes.append(el("circle", { cx: x, cy: y, r, style: "fill: var(--sv-paper)", stroke: color, "stroke-opacity": op,
                                    "stroke-width": isJunction(node.role) ? 3 : 2.5 }));
       labels(node, topology, snapshot, stale, t);
     }
@@ -273,7 +288,8 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
   /** Name, symbol, value and detail inside the ring (symbol nodes); value (and detail) only for the junctions. */
   function labels(node: FlowNode, topology: Topology, snapshot: PlantSnapshot | null, stale: boolean, t: Texts): void {
     const text = nodeText(node.id, topology, snapshot, stale, t.lang);
-    const ink = text.dim ? GRAY : "#fff";
+    const paper = COLORS[theme].ink;
+    const ink = text.dim ? GRAY : paper;
     const lines: { kind: "text" | "icon"; text?: string; size: number; weight?: number; fill?: string; opacity?: number }[] = [];
     const junction = isJunction(node.role);
     const detailLines = detailRows(text.detail, node.radius * (junction ? 1.8 : 1.7),
@@ -286,10 +302,10 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       width = node.radius * 1.8;
     } else {
       const small = node.radius < 45;
-      if (text.showsTitle) lines.push({ kind: "text", text: text.name, size: small ? 8 : 10.5, fill: "#fff", opacity: 0.75 });
+      if (text.showsTitle) lines.push({ kind: "text", text: text.name, size: small ? 8 : 10.5, fill: paper, opacity: 0.75 });
       lines.push({ kind: "icon", size: node.radius * (small ? 0.4 : 0.5) });
       lines.push({ kind: "text", text: text.value, size: small ? 9.5 : 15, weight: 600, fill: ink });
-      for (const d of detailLines) lines.push({ kind: "text", text: d, size: small ? 6.5 : 9, fill: "#fff", opacity: 0.7 });
+      for (const d of detailLines) lines.push({ kind: "text", text: d, size: small ? 6.5 : 9, fill: paper, opacity: 0.7 });
       width = node.radius * (node.role.kind === "battery" ? 1.5 : 1.7);
     }
     const gap = junction ? 2 : 1;
@@ -301,14 +317,14 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       const h = heights[i] as number;
       if (line.kind === "icon") {
         const symbol = topology.symbol(node.id);
-        const color = nodeColor(node.role);
+        const color = nodeColor(node.role, theme);
         const iconGroup = el("g", { opacity: stale && symbol !== "battery" ? 0.5 : 1 });   // the battery dims itself
         iconGroup.innerHTML = iconMarkup(symbol, node.center.x - h / 2, y, h, color, level(node.id, symbol, topology, snapshot),
                                          stale);
         group.append(iconGroup);
       } else {
         const tx = el("text", { x: node.center.x, y: y + h / 2, "text-anchor": "middle", "dominant-baseline": "central",
-                                "font-size": (line.size as number).toFixed(2), fill: line.fill ?? "#fff" });
+                                "font-size": (line.size as number).toFixed(2), fill: line.fill ?? paper });
         if (line.weight) tx.setAttribute("font-weight", String(line.weight));
         if (line.opacity !== undefined) tx.setAttribute("fill-opacity", String(line.opacity));
         tx.textContent = line.text ?? "";
@@ -386,6 +402,12 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       lastRender = () => this.render(state, topology, t);
       if (reducedMotion()) stopBalls();
       wake();
+    },
+    setTheme(next) {
+      if (next === theme) return;
+      theme = next;
+      box.classList.toggle("light", theme === "light");
+      lastRender?.();                           // balls take the new colours with their next frame
     },
     notice(text) {
       noticeBox.textContent = text;

@@ -26,11 +26,13 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import partial
 from typing import Any
 
 import uvicorn
 
 from . import __version__
+from .api_v2 import history_failures
 from .app import UPSTREAM_ERRORS, create_admin_app, create_public_app
 from .config import MappingConfig, load_mapping
 from .devices import DeviceStore
@@ -52,6 +54,8 @@ from .plant import PlantError, PlantStore
 from .plant_legacy import DERIVED as LEGACY_DERIVED
 from .plant_legacy import TABLE as LEGACY_TABLE
 from .plant_live import PlantLive
+from .periods import TZ as LEGACY_TZ
+from .plant_power import power_reply
 from .plant_archive import PlantArchive
 from .plant_history import PlantHistory
 from .runtime import (
@@ -370,7 +374,13 @@ async def serve(phase: dict[str, bool] | None = None) -> str | None:
                                          card=CardContext(
                                              plant=lambda: plant,
                                              snapshot=(lambda: plant_live.snapshot(datetime.now(UTC))) if plant_live else None,
-                                             timezone=lambda: ha.timezone, build=build_label)))
+                                             timezone=lambda: ha.timezone, build=build_label,
+                                             power=partial(power_reply,
+                                                           legacy_energy=plant_context["legacy_energy"],
+                                                           plant_history=plant_history),
+                                             history_errors=history_failures(UPSTREAM_ERRORS),
+                                             history_timezone=(lambda: LEGACY_TZ.key) if mode.name == PLANT_LEGACY
+                                             else None)))
         users = UserList(lambda message: ha.read(message, timeout=10, heavy=False))
         ui_asgi: Any = IngressGuard(ui_app, users) if ui_bind.ingress else DevGuard(ui_app)
         servers.append(_Server(uvicorn.Config(ui_asgi, host=ui_bind.host, port=ui_bind.port, log_level="info",

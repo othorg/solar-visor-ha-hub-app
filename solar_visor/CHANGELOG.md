@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1
+
+- Dashboard card and the web interface's overview follow Home Assistant's light or dark display. Both use the surface
+  of Home Assistant's cards (theme colours) instead of plain black; in light mode the colours of the Solar Visor apps'
+  widgets on a light background.
+- Dashboard card: tapping *Home* shows its calculated power of today next to the total consumption, as in the Solar
+  Visor apps (home has no sensor of its own). The other devices keep opening the history of their sensors.
+
 ## 0.4.0
 
 - Web interface, *Overview* → *Now*: the energy flow of the dashboard card instead of a table of live values. Tapping a

@@ -19,8 +19,8 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
   aktuellen Werte – und die Verbindung zu Home Assistant.
 - **Dashboard-Symbole**: ein Symbol je Modul (Solarmodul, Haus, Batterie, Strommast, Wallbox, Wohnmobil, Stecker) für
   das Dashboard der Solar-Visor-Apps und die Dashboard-Karte.
-- **Dashboard-Karte**: der Energiefluss der Solar-Visor-Apps als Karte für Home-Assistant-Dashboards – ein Tipp auf
-  ein Gerät zeigt den Verlauf seiner Sensoren (siehe unten).
+- **Dashboard-Karte**: der Energiefluss der Solar-Visor-Apps als Karte für Home-Assistant-Dashboards, hell oder
+  dunkel wie Home Assistant – ein Tipp auf ein Gerät zeigt den Verlauf seiner Sensoren (siehe unten).
 - **Historie**: Die App bewahrt abgeschlossene Tage in einem eigenen Archiv auf (auch wenn der Recorder sie gelöscht
   hat) und berechnet daraus und aus dem Home-Assistant-Recorder die Energie je Tag, Woche, Monat und Jahr – angezeigt
   in den Solar-Visor-Apps; die Web-Seite zeigt Quellen und Archiv und kann Tage neu berechnen. Unbekanntes bleibt
@@ -56,8 +56,9 @@ Alles wird in der Web-Oberfläche eingerichtet – die App hat keine Optionen:
 ## Dashboard-Karte
 
 Die Dashboard-Karte zeigt den Energiefluss wie die Solar-Visor-Apps: Live-Werte, fließende Kugeln, den Ladestand der
-Batterie. Ein Tipp auf ein Gerät öffnet den Home-Assistant-Verlauf seiner Sensoren. Die App muss installiert sein und
-laufen – die Karte holt ihre Daten von ihr.
+Batterie – hell oder dunkel wie Home Assistant, im Hintergrund seiner Karten. Ein Tipp auf ein Gerät öffnet den
+Home-Assistant-Verlauf seiner Sensoren; *Zuhause*, ohne eigenen Sensor, zeigt seine berechnete Leistung von heute neben
+dem Gesamtverbrauch. Die App muss installiert sein und laufen – die Karte holt ihre Daten von ihr.
 
 Die Karte auf einem von zwei Wegen installieren:
 

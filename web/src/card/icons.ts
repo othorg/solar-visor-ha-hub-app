@@ -63,8 +63,9 @@ function camper(b: Box): string {
   d += `M${p(0.76, 0.41)}L${p(0.83, 0.42)}L${p(0.9, 0.53)}L${p(0.76, 0.53)}Z`;
   const wheels = [0.25, 0.79].map((x) => {
     const cx = f(b.x + x * s), cy = f(b.y + 0.74 * s);
-    return `<circle cx="${cx}" cy="${cy}" r="${f(0.1 * s)}" stroke="#000" stroke-width="${f(0.035 * s)}"/>`
-      + `<circle cx="${cx}" cy="${cy}" r="${f(0.035 * s)}" fill="#000"/>`;
+    // cut out of the body in the colour of the ring's inside (black or Home Assistant's light card)
+    return `<circle cx="${cx}" cy="${cy}" r="${f(0.1 * s)}" style="stroke: var(--sv-paper, #000)" stroke-width="${f(0.035 * s)}"/>`
+      + `<circle cx="${cx}" cy="${cy}" r="${f(0.035 * s)}" style="fill: var(--sv-paper, #000)"/>`;
   }).join("");
   return `<path d="${d}" fill-rule="evenodd"/>${wheels}`;
 }

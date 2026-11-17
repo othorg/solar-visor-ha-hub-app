@@ -122,6 +122,11 @@ def snapshot_reply(snap: PlantSnapshot, response: Response, if_none_match: str |
     return snap
 
 
+def history_failures(upstream_errors: tuple[type[BaseException], ...]) -> tuple[type[BaseException], ...]:
+    """Errors of a history source that answer 503 (the source is down) instead of 500."""
+    return (*upstream_errors, ConnectionError, TimeoutError, RuntimeError)
+
+
 def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | None, journal: Journal | None = None,
              rscp: Any = None, timezone: Callable[[], str | None] | None = None,
              rscp_enabled: Callable[[], bool] | None = None,
@@ -131,7 +136,7 @@ def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | N
     """``legacy_energy``: the existing calculation (imported plant); ``plant_history``: the generic history of any other
     plant; ``jobs``: shared with /v1 – the same computation never runs twice."""
     base = f"/{API_VERSION_2}"
-    history_errors = (*upstream_errors, ConnectionError, TimeoutError, RuntimeError)
+    history_errors = history_failures(upstream_errors)
 
     def plant_live() -> PlantLive:
         if live is None:
@@ -201,10 +206,9 @@ def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | N
                        max_points: int = Query(600, alias="maxPoints", ge=10, le=2000),
                        _: Any = Depends(require_read)) -> PlantPowerResponse:
         """Power history under the live metric ids (same meaning and sign as the snapshot)."""
-        from .energy_api import power_history, utc
+        from .energy_api import utc
         from .models import TimeInterval
-        from .plant_power import LEGACY_SERIES, MAX_RANGE, allowed_series, plant_power
-        from .plant_power import from_legacy as power_from_legacy
+        from .plant_power import MAX_RANGE, NoHistory, PowerSeriesError, power_reply
         live_ = plant_live()
         try:
             start, end = utc(from_), utc(to)
@@ -213,23 +217,11 @@ def register(app: FastAPI, require_read: Callable[..., Any], live: PlantLive | N
         if not start < end or end - start > MAX_RANGE:
             raise HTTPException(status_code=422, detail="range must be positive and at most 8 days")
         ids = [m for m in series.split(",") if m]
-        revisions = None
-        if legacy_energy is None and plant_history is not None:
-            revisions = await plant_history.revisions(start, end, live_.plant)
-        allowed = (sorted(k for k in LEGACY_SERIES if k.split(".")[0] in {m.id for m in live_.plant.active()}
-                          or k.startswith(("generation", "consumption", "home")))
-                   if legacy_energy is not None else allowed_series(live_.plant, list((revisions or {}).values())))
-        if not 1 <= len(ids) <= 19 or any(m not in allowed for m in ids) or len(set(ids)) != len(ids):
-            raise HTTPException(status_code=422, detail=f"1–19 distinct series of: {', '.join(allowed)}")
         try:
-            if legacy_energy is not None:
-                resp = power_from_legacy(await power_history(legacy_energy, [LEGACY_SERIES[i][0] for i in ids], start,
-                                                             end, max_points), ids)
-            elif plant_history is not None:
-                resp = await plant_power(plant_history, live_.plant, ids, start, end, max_points, revisions)
-            else:
-                raise HTTPException(status_code=503, detail="history unavailable")
-        except history_errors as exc:
+            resp = await power_reply(live_.plant, ids, start, end, max_points, legacy_energy, plant_history)
+        except PowerSeriesError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from None
+        except (NoHistory, *history_errors) as exc:
             raise HTTPException(status_code=503, detail="history unavailable") from exc
         if journal is not None:
             resp = resp.model_copy(update={

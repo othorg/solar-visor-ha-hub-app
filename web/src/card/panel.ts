@@ -4,6 +4,7 @@
 // success, paused while the page is hidden. Reads only.
 import { CardApi, NotConfigured, type CardPlant } from "./api";
 import type { PlantSnapshot } from "./model";
+import type { Theme } from "./palette";
 import type { Texts } from "./texts";
 import { Topology } from "./topology";
 import { createView, VIEW_CSS, type Clickable, type View } from "./view";
@@ -23,6 +24,8 @@ export interface CardState {
 export interface PanelOptions {
   api: CardApi;
   texts: Texts;
+  /** Dark (default, the app dashboard) or light surface. */
+  theme?: Theme;
   onNode(node: string): void;
   /** Which nodes take a click (default: the ones with Home Assistant sensors). */
   clickable?: Clickable;
@@ -55,7 +58,7 @@ export class FlowPanel {
     this.style = document.createElement("style");
     this.style.textContent = VIEW_CSS;
     root.append(this.style);
-    this.view = createView(root, this.t, (node) => opts.onNode(node), opts.clickable);
+    this.view = createView(root, this.t, (node) => opts.onNode(node), opts.clickable, opts.theme);
     document.addEventListener("visibilitychange", this.onVisibility);
     this.render();
     void this.tick();
@@ -74,6 +77,10 @@ export class FlowPanel {
     this.t = t;
     this.topology = this.plant ? new Topology(this.plant.capabilities, t.lang) : null;
     this.render();
+  }
+
+  setTheme(theme: Theme): void {
+    if (!this.closed) this.view.setTheme(theme);
   }
 
   notice(text: string): void {

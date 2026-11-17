@@ -31,32 +31,58 @@ export async function openHistory(root: ShadowRoot, hass: Hass, req: HistoryRequ
   let current = hass;
   graph.hass = hass;
 
-  root.querySelector("dialog.sv-history")?.remove();
+  const dialog = openDialog(root, req.note, req.close, graph, (d) => {
+    // Home Assistant's card events stay in the dialog: a lazily loaded graph announces `ll-upgrade`, and a dashboard
+    // view that hears it lays all its cards out anew – detaching this card and closing the dialog (seen 2026-11-16).
+    // `ll-rebuild` asks for a fresh element, which the dialog does itself.
+    d.addEventListener("ll-upgrade", (e) => e.stopPropagation());
+    d.addEventListener("ll-rebuild", (e) => {
+      e.stopPropagation();
+      const fresh = helpers.createCardElement(config);
+      fresh.hass = current;
+      graph.replaceWith(fresh);
+      graph = fresh;
+    });
+  });
+  if (!dialog) return () => undefined;
+  return (h: Hass) => {
+    current = h;
+    if (dialog.isConnected) graph.hass = h;
+  };
+}
+
+// what a dialog still has running (the curve's request) – ended however the dialog goes: closed, replaced, torn down
+const pending = new WeakMap<Element, () => void>();
+
+function dismiss(dialog: Element | null): void {
+  if (!dialog) return;
+  pending.get(dialog)?.();
+  pending.delete(dialog);
+  dialog.remove();
+}
+
+/** The dialog of a node's history (Home Assistant's graph or the hub's curve): a note, a close button and the content;
+ *  a click on the backdrop closes it, closing removes it. ``prepare`` runs before it is attached, ``onGone`` when it goes
+ *  (closed, replaced by another, the card torn down). Null: no dialog. */
+export function openDialog(root: ShadowRoot, note: string, closeLabel: string, content: HTMLElement,
+                           prepare?: (dialog: HTMLDialogElement) => void, onGone?: () => void): HTMLDialogElement | null {
+  dismiss(root.querySelector("dialog.sv-history"));
   const dialog = document.createElement("dialog");
   dialog.className = "sv-history";
   const head = document.createElement("div");
   head.className = "sv-history-head";
-  const note = document.createElement("p");
-  note.textContent = req.note;
+  const text = document.createElement("p");
+  text.textContent = note;
   const close = document.createElement("button");
   close.type = "button";
   close.textContent = "✕";
-  close.setAttribute("aria-label", req.close);
+  close.setAttribute("aria-label", closeLabel);
   close.addEventListener("click", () => dialog.close());
-  head.append(note, close);
-  dialog.append(head, graph);
-  // Home Assistant's card events stay in the dialog: a lazily loaded graph announces `ll-upgrade`, and a dashboard
-  // view that hears it lays all its cards out anew – detaching this card and closing the dialog (seen 2026-11-16).
-  // `ll-rebuild` asks for a fresh element, which the dialog does itself.
-  dialog.addEventListener("ll-upgrade", (e) => e.stopPropagation());
-  dialog.addEventListener("ll-rebuild", (e) => {
-    e.stopPropagation();
-    const fresh = helpers.createCardElement(config);
-    fresh.hass = current;
-    graph.replaceWith(fresh);
-    graph = fresh;
-  });
-  dialog.addEventListener("close", () => dialog.remove());
+  head.append(text, close);
+  dialog.append(head, content);
+  prepare?.(dialog);
+  if (onGone) pending.set(dialog, onGone);
+  dialog.addEventListener("close", () => dismiss(dialog));
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close();                 // a click on the backdrop
   });
@@ -64,18 +90,15 @@ export async function openHistory(root: ShadowRoot, hass: Hass, req: HistoryRequ
   try {
     dialog.showModal();
   } catch {
-    dialog.remove();
-    return () => undefined;
+    dismiss(dialog);
+    return null;
   }
-  return (h: Hass) => {
-    current = h;
-    if (dialog.isConnected) graph.hass = h;
-  };
+  return dialog;
 }
 
 /** Closes an open history dialog (the renderer is torn down). */
 export function closeHistory(root: ShadowRoot): void {
-  root.querySelector("dialog.sv-history")?.remove();
+  dismiss(root.querySelector("dialog.sv-history"));
 }
 
 export const HISTORY_CSS = `

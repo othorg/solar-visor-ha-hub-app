@@ -7,6 +7,7 @@ import { Topology } from "./card/topology";
 import { metricLabel, nodeMetrics, nodeValue } from "./FlowDashboard";
 import { I18nProvider } from "./i18n";
 import { LiveCard } from "./LiveCard";
+import { currentTheme, haDarkMode } from "./theme";
 
 afterEach(() => {
   cleanup();
@@ -74,5 +75,28 @@ describe("overview „Jetzt“", () => {
     expect(screen.getByText("unbekannt")).toBeTruthy();                 // string 2 without a value
     act(() => void pv.dispatchEvent(new MouseEvent("click")));
     await waitFor(() => expect(screen.queryByText("String Ost · String 1 · Leistung")).toBeNull());
+  });
+});
+
+describe("theme of the interface", () => {
+  const framed = (darkMode: unknown) => {
+    const parent = { document: { querySelector: () => ({ hass: { themes: { darkMode } } }) } };
+    return { parent } as unknown as Window;
+  };
+
+  it("reads Home Assistant's display setting from the surrounding page", () => {
+    expect(haDarkMode(framed(true))).toBe(true);
+    expect(haDarkMode(framed(false))).toBe(false);
+    expect(currentTheme(framed(true))).toBe("dark");
+    expect(currentTheme(framed(false))).toBe("light");
+    expect(haDarkMode(framed(undefined))).toBeNull();
+  });
+
+  it("falls back to the system setting on its own or in a foreign frame", () => {
+    const alone = {} as Window & { parent?: Window };
+    alone.parent = alone;
+    expect(haDarkMode(alone)).toBeNull();
+    const foreign = { get parent(): Window { throw new DOMException("cross-origin", "SecurityError"); } } as unknown as Window;
+    expect(haDarkMode(foreign)).toBeNull();
   });
 });

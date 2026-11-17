@@ -1,6 +1,6 @@
 [project]
 name = "solar-visor-hub"
-version = "0.4.0"
+version = "0.4.1"
 description = "Read-only hub for Solar Visor (Home Assistant + InfluxDB → iOS/watchOS)"
 requires-python = ">=3.13,<3.14"
 dependencies = [

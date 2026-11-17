@@ -1,60 +1,84 @@
-// Dashboard colours on black – the dark values of the apps' scheme „Klar“ (ios/SharedStyle/Palette.swift, Hex) and the
-// SOC ramp (SolarVisorKit/SOCGauge.swift). The card is always dark like the app dashboard.
+// Dashboard colours of the apps' scheme „Klar“ (ios/SharedStyle/Palette.swift) and the SOC ramp
+// (SolarVisorKit/SOCGauge.swift): on a dark card the dark-surface values (Hex) of the app dashboard, on a light card the
+// OnLight values of the home-screen widgets (same hue, darker; roles without one keep their value). Dark or light
+// follows Home Assistant, the card surface is Home Assistant's (user decisions 2026-11-17).
 import type { Source } from "./allocation";
 import type { FlowLayout, FlowRole } from "./layout";
 
-export const COLOR = {
-  pv: ["#F7B733", "#E2684A", "#E3F2CE"],
-  grid: "#8F949C",
-  home: "#87D576",
-  wallbox: "#EC7BD6",
-  battery: "#3D8BF2",
-  junction: "#E4E7EC",
-  womo: "#23A28C",
-} as const;
+export type Theme = "dark" | "light";
 
-export function pvColor(index: number): string {
-  return COLOR.pv[Math.min(Math.max(index, 0), 2)] as string;
+interface Colors {
+  pv: readonly [string, string, string];
+  grid: string;
+  home: string;
+  /** The calculated home line beside the consumption (charts). */
+  homeLine: string;
+  wallbox: string;
+  battery: string;
+  junction: string;
+  womo: string;
+  /** Text inside the rings. */
+  ink: string;
+  /** A ball whose source is not known. */
+  unattributed: string;
 }
 
-export function nodeColor(role: FlowRole): string {
+export const COLORS: Record<Theme, Colors> = {
+  dark: {
+    pv: ["#F7B733", "#E2684A", "#E3F2CE"], grid: "#8F949C", home: "#87D576", homeLine: "#C4EBB7", wallbox: "#EC7BD6", battery: "#3D8BF2",
+    junction: "#E4E7EC", womo: "#23A28C", ink: "#FFFFFF", unattributed: "rgba(255,255,255,0.55)",
+  },
+  light: {
+    pv: ["#D39914", "#E2684A", "#88B12F"], grid: "#8F949C", home: "#55A742", homeLine: "#2E7D1F", wallbox: "#F055D7", battery: "#3D8BF2",
+    junction: "#6B7480", womo: "#23A28C", ink: "#1C1F24", unattributed: "rgba(0,0,0,0.45)",
+  },
+};
+
+export function pvColor(index: number, theme: Theme = "dark"): string {
+  return COLORS[theme].pv[Math.min(Math.max(index, 0), 2)] as string;
+}
+
+export function nodeColor(role: FlowRole, theme: Theme = "dark"): string {
+  const c = COLORS[theme];
   switch (role.kind) {
-    case "pv": return pvColor(role.index);
+    case "pv": return pvColor(role.index, theme);
     case "generation":
-    case "consumption": return COLOR.junction;
-    case "grid": return COLOR.grid;
-    case "home": return COLOR.home;
-    case "generic": return COLOR.womo;
-    case "wallbox": return COLOR.wallbox;
-    case "battery": return COLOR.battery;
+    case "consumption": return c.junction;
+    case "grid": return c.grid;
+    case "home": return c.home;
+    case "generic": return c.womo;
+    case "wallbox": return c.wallbox;
+    case "battery": return c.battery;
   }
 }
 
 /** Static colour of a wire by the side it starts from. */
-export function edgeColor(id: string, layout: FlowLayout): string {
+export function edgeColor(id: string, layout: FlowLayout, theme: Theme = "dark"): string {
+  const c = COLORS[theme];
   switch (id) {
     case "GC":
     case "GB":
-    case "GN": return COLOR.pv[0];
+    case "GN": return c.pv[0];
     case "BC":
-    case "BN": return COLOR.battery;
-    case "NC": return COLOR.grid;
+    case "BN": return c.battery;
+    case "NC": return c.grid;
     default: {
       const n = layout.nodes.get(id);
-      return n ? nodeColor(n.role) : COLOR.wallbox;
+      return n ? nodeColor(n.role, theme) : c.wallbox;
     }
   }
 }
 
 /** Colour of a ball: its source. */
-export function sourceColor(s: Source): string {
+export function sourceColor(s: Source, theme: Theme = "dark"): string {
+  const c = COLORS[theme];
   switch (s) {
-    case "grid": return COLOR.grid;
-    case "battery": return COLOR.battery;
-    case "pv1": return pvColor(0);
-    case "pv2": return pvColor(1);
-    case "pv3": return pvColor(2);
-    case "unattributed": return "rgba(255,255,255,0.55)";
+    case "grid": return c.grid;
+    case "battery": return c.battery;
+    case "pv1": return pvColor(0, theme);
+    case "pv2": return pvColor(1, theme);
+    case "pv3": return pvColor(2, theme);
+    case "unattributed": return c.unattributed;
   }
 }
 

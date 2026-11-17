@@ -18,8 +18,8 @@ It **never switches anything**: no service calls, no writes to Home Assistant, n
   and the connection to Home Assistant.
 - **Dashboard symbols**: a symbol per module (solar panel, house, battery, pylon, wallbox, motorhome, plug) for the
   dashboard of the Solar Visor apps and the dashboard card.
-- **Dashboard card**: the energy flow of the Solar Visor apps as a Home Assistant dashboard card – tap a device to see
-  the history of its sensors (see below).
+- **Dashboard card**: the energy flow of the Solar Visor apps as a Home Assistant dashboard card, light or dark like
+  Home Assistant – tap a device to see the history of its sensors (see below).
 - **History**: the app keeps finished days in its own archive (also after the recorder has purged them) and
   calculates energy per day, week, month and year from it and the Home Assistant recorder – shown in the Solar Visor
   apps; the web page shows the sources and the archive and can recalculate days. Unknown stays unknown – never 0.
@@ -53,9 +53,10 @@ Everything is set up in the web interface – there are no app options:
 
 ## Dashboard card
 
-The dashboard card shows the energy flow like the Solar Visor apps: live values, flowing balls, the battery level.
-Tapping a device opens the Home Assistant history of its sensors. The app must be installed and running – the card
-takes its data from it.
+The dashboard card shows the energy flow like the Solar Visor apps: live values, flowing balls, the battery level –
+light or dark like Home Assistant, on the surface of its cards. Tapping a device opens the Home Assistant history of its
+sensors; *Home*, which has no sensor of its own, shows its calculated power of today next to the total consumption.
+The app must be installed and running – the card takes its data from it.
 
 Install the card in one of two ways:
 

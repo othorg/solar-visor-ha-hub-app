@@ -3,8 +3,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CardApi } from "./api";
 import { FlowPanel, type CardState } from "./panel";
+import { COLORS, nodeColor, sourceColor } from "./palette";
+import { create, themeOf } from "./renderer";
 import { cardFetch, testPlant } from "./testPlant";
 import { textsFor } from "./texts";
+import { VIEW_CSS } from "./view";
 
 function mount(opts: Partial<ConstructorParameters<typeof FlowPanel>[1]> = {}, fetcher = cardFetch()) {
   const host = document.createElement("div");
@@ -66,5 +69,55 @@ describe("flow panel", () => {
     panel.destroy();
     panel.destroy();
     expect(root.childNodes).toHaveLength(0);
+  });
+});
+
+describe("light and dark like Home Assistant", () => {
+  const inks = (root: ShadowRoot) => new Set([...root.querySelectorAll("svg text")].map((t) => t.getAttribute("fill")));
+
+  it("takes the apps' on-light colours on a light surface", () => {
+    expect(nodeColor({ kind: "pv", index: 0 } as never, "light")).toBe("#D39914");
+    expect(nodeColor({ kind: "pv", index: 0 } as never)).toBe("#F7B733");          // dark stays the app dashboard
+    expect(nodeColor({ kind: "consumption" } as never, "light")).toBe("#6B7480");
+    expect(sourceColor("unattributed", "light")).toBe(COLORS.light.unattributed);
+  });
+
+  it("draws on Home Assistant's card surface in both modes – black or white only without a theme", () => {
+    const rule = (sel: string) => VIEW_CSS.slice(VIEW_CSS.indexOf(`${sel} {`), VIEW_CSS.indexOf("}", VIEW_CSS.indexOf(`${sel} {`)));
+    expect(rule(".sv")).toContain("--sv-surface: var(--ha-card-background, var(--card-background-color, #000))");
+    expect(rule(".sv.light")).toContain("--sv-surface: var(--ha-card-background, var(--card-background-color, #fff))");
+    expect(rule(".sv")).toContain("border: var(--ha-card-border-width, 1px) solid var(--sv-border)");
+  });
+
+  it("draws light or dark and switches without a new request", async () => {
+    const { root, panel, fetchMock, updates } = mount({ theme: "light" });
+    await vi.waitFor(() => expect(updates.at(-1)?.snapshot).not.toBeNull());
+    expect(root.querySelector(".sv")?.classList.contains("light")).toBe(true);
+    expect(inks(root).has(COLORS.light.ink)).toBe(true);
+    expect(inks(root).has(COLORS.dark.ink)).toBe(false);
+    const calls = fetchMock.mock.calls.length;
+    panel.setTheme("dark");
+    expect(root.querySelector(".sv")?.classList.contains("light")).toBe(false);
+    expect(inks(root).has(COLORS.dark.ink)).toBe(true);
+    expect(fetchMock.mock.calls.length).toBe(calls);
+    panel.destroy();
+  });
+
+  it("follows Home Assistant's dark mode in the card – dark when it does not say", async () => {
+    expect(themeOf({ callWS: vi.fn(), themes: { darkMode: false } })).toBe("light");
+    expect(themeOf({ callWS: vi.fn(), themes: { darkMode: true } })).toBe("dark");
+    expect(themeOf({ callWS: vi.fn() })).toBe("dark");
+    vi.stubGlobal("fetch", vi.fn(cardFetch(() => testPlant("b1"))));
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = host.attachShadow({ mode: "open" });
+    const hass = { callWS: vi.fn(), language: "de", themes: { darkMode: false } };
+    const card = create(root, { apiBase: "", build: "b1", hass, config: { type: "custom:solar-visor-card" },
+                                reload: vi.fn(), renewSession: async () => undefined });
+    expect(root.querySelector(".sv")?.classList.contains("light")).toBe(true);
+    card.update({ ...hass, themes: { darkMode: true } }, { type: "custom:solar-visor-card" });
+    expect(root.querySelector(".sv")?.classList.contains("light")).toBe(false);
+    card.destroy();
+    vi.unstubAllGlobals();
   });
 });

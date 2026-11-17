@@ -9,6 +9,7 @@ import { textsFor, type Texts } from "./card/texts";
 import { NODE, type Topology } from "./card/topology";
 import { DICTIONARIES, useI18n, type TextKey } from "./i18n";
 import { formatValue } from "./plant";
+import { useTheme } from "./theme";
 
 /** Metrics shown for a node: its own (power first, then its other points, then its strings); generation: the total
  *  and the power of every generator. Only metrics the snapshot carries. */
@@ -41,6 +42,9 @@ function has(key: string): key is TextKey {
 
 export function FlowDashboard() {
   const { t, language } = useI18n();
+  const theme = useTheme();
+  const latestTheme = useRef(theme);
+  latestTheme.current = theme;
   const host = useRef<HTMLDivElement>(null);
   const panel = useRef<FlowPanel | null>(null);
   const [shown, setShown] = useState<{ state: CardState; topology: Topology | null } | null>(null);
@@ -56,6 +60,7 @@ export function FlowDashboard() {
     const p = new FlowPanel(root, {
       api: new CardApi({ apiBase: "", renewSession: async () => undefined }),   // the Ingress session is HA's page's
       texts: latestTexts.current,
+      theme: latestTheme.current,
       clickable: () => true,
       onNode: (id) => setNode((current) => (current === id ? null : id)),
       onUpdate: (state, topology) => setShown({ state, topology }),
@@ -68,6 +73,7 @@ export function FlowDashboard() {
   }, []);
 
   useEffect(() => panel.current?.setTexts(texts), [texts]);
+  useEffect(() => panel.current?.setTheme(theme), [theme]);
 
   const topology = shown?.topology ?? null;
   const snapshot = shown?.state.snapshot ?? null;

@@ -13,6 +13,11 @@ export interface Texts {
   close: string;
   noHistory: string;
   opensHistory: string;
+  /** The hub's curve of a node without sensors (home). */
+  curveNote: string;
+  today: string;
+  loading: string;
+  curveFailed: string;
 }
 
 const DE: Texts = {
@@ -27,6 +32,10 @@ const DE: Texts = {
   close: "Schließen",
   noHistory: "Der Verlauf von Home Assistant ist hier nicht verfügbar.",
   opensHistory: "öffnet den Verlauf",
+  curveNote: "Vom Hub berechnet – heute seit Mitternacht.",
+  today: "heute",
+  loading: "Lade …",
+  curveFailed: "Der Verlauf ist gerade nicht verfügbar.",
 };
 
 const EN: Texts = {
@@ -41,6 +50,10 @@ const EN: Texts = {
   close: "Close",
   noHistory: "Home Assistant's history is not available here.",
   opensHistory: "opens the history",
+  curveNote: "Calculated by the hub – today since midnight.",
+  today: "today",
+  loading: "Loading …",
+  curveFailed: "The history is not available right now.",
 };
 
 export function textsFor(lang: "de" | "en"): Texts {

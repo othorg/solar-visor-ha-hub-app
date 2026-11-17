@@ -1,6 +1,7 @@
-// The hub's card routes over Ingress (GET only): the plant with its sensors and the live snapshot.
+// The hub's card routes over Ingress (GET only): the plant with its sensors, the live snapshot and the calculated
+// curve of a node without sensors.
 import type { RendererContext } from "./contract";
-import type { PlantCapabilities, PlantSnapshot } from "./model";
+import type { PlantCapabilities, PlantPowerResponse, PlantSnapshot } from "./model";
 
 export interface CardSensor {
   entity_id: string;
@@ -43,6 +44,11 @@ export class CardApi {
     this.etag = r.headers.get("ETag");
     this.last = snap;
     return snap;
+  }
+
+  /** Today's calculated power of a node without Home Assistant sensors (home). */
+  nodeHistory(node: string, signal?: AbortSignal): Promise<PlantPowerResponse> {
+    return this.json<PlantPowerResponse>(`card/v1/history/${encodeURIComponent(node)}`, signal);
   }
 
   /** Forget the cached snapshot (another plant revision). */

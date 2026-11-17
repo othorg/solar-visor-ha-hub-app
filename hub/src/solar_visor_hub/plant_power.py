@@ -177,3 +177,36 @@ async def plant_power(history, plant: Plant, ids: Sequence[str], start: datetime
         out.append(PlantPowerSeries(series_id=sid, unit=plan.unit, derived=plan.derived, resolution_s=res or int(step.total_seconds()),
                                     source="statistic_mean", points=points))
     return PlantPowerResponse(start=t0, end=end, timezone=tz.key, calculation_version=GENERIC_VERSION, series=out)
+
+
+class PowerSeriesError(ValueError):
+    """Series the plant does not have (or none, too many, twice) – the message lists the allowed ones."""
+
+
+class NoHistory(LookupError):
+    """Neither the existing calculation nor a generic history is running."""
+
+
+MAX_SERIES = 19
+
+
+async def power_reply(plant: Plant, ids: Sequence[str], start: datetime, end: datetime, max_points: int,  # type: ignore[no-untyped-def]
+                      legacy_energy=None, plant_history=None) -> PlantPowerResponse:
+    """Power history of ``ids`` in [start, end) – the one computation behind /v2/power and the dashboard card's node
+    history: the existing calculation for the imported plant (``legacy_energy``), the generic history otherwise."""
+    from .energy_api import power_history
+
+    revisions = None
+    if legacy_energy is None and plant_history is not None:
+        revisions = await plant_history.revisions(start, end, plant)
+    allowed = (sorted(k for k in LEGACY_SERIES if k.split(".")[0] in {m.id for m in plant.active()}
+                      or k.startswith(("generation", "consumption", "home")))
+               if legacy_energy is not None else allowed_series(plant, list((revisions or {}).values())))
+    if not 1 <= len(ids) <= MAX_SERIES or any(m not in allowed for m in ids) or len(set(ids)) != len(ids):
+        raise PowerSeriesError(f"1–{MAX_SERIES} distinct series of: {', '.join(allowed)}")
+    if legacy_energy is not None:
+        return from_legacy(await power_history(legacy_energy, [LEGACY_SERIES[i][0] for i in ids], start, end, max_points),
+                           list(ids))
+    if plant_history is not None:
+        return await plant_power(plant_history, plant, ids, start, end, max_points, revisions)
+    raise NoHistory("history unavailable")
