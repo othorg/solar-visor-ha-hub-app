@@ -59,13 +59,13 @@ SERIES: dict[str, SeriesDef] = {
     "womo_shore": SeriesDef(("womo_shore",)),
     "womo_battery": SeriesDef(("womo_battery_discharge", "womo_battery_charge"), -1),
     "womo_soc": SeriesDef(("womo_soc",), unit=Unit.PERCENT),
-    # PV detail charts (same separate computation): E3/DC strings, KOSTAL measured DC sum
+    # PV detail charts: E3/DC strings (energy engine, like the KOSTAL MPPTs), KOSTAL measured DC sum (separate)
     "s10_string1": SeriesDef(("s10_string1",)),
     "s10_string2": SeriesDef(("s10_string2",)),
     "kostal_dc_sum": SeriesDef(("kostal_dc_sum",)),
 }
 # series of the separate computation (EnergyService.extra_columns)
-EXTRA_SERIES_IDS = frozenset(("womo_shore", "womo_battery", "womo_soc", "s10_string1", "s10_string2", "kostal_dc_sum"))
+EXTRA_SERIES_IDS = frozenset(("womo_shore", "womo_battery", "womo_soc", "kostal_dc_sum"))
 
 
 @dataclass

@@ -9,6 +9,7 @@ balance and its history and serves the Solar Visor apps. It never switches anyth
 
 Open **Solar Visor** in the sidebar (or *Open web UI*). Everything is set up there – the app has no options:
 
+- **Overview** – the energy flow of the plant (tap a device for its current values), connection to Home Assistant.
 - **Plant** – modules, the Home Assistant sensor of every data point, installed PV power; check and activate.
 - **Data points** – every assigned sensor with its live value and check.
 - **History** – data sources, the archive of finished days, recalculation (the energy per period is shown in the
@@ -43,6 +44,8 @@ Energiebilanz und ihre Historie und versorgt die Solar-Visor-Apps. Sie schaltet 
 **Solar Visor** in der Seitenleiste öffnen (oder *Web-UI öffnen*). Dort wird alles eingerichtet – die App hat keine
 Optionen:
 
+- **Übersicht** – der Energiefluss der Anlage (ein Tipp auf ein Gerät zeigt seine aktuellen Werte), Verbindung zu
+  Home Assistant.
 - **Anlage** – Module, der Home-Assistant-Sensor jedes Datenpunkts, installierte PV-Leistung; prüfen und aktivieren.
 - **Datenpunkte** – alle zugeordneten Sensoren mit Live-Wert und Prüfung.
 - **Historie** – Datenquellen, Archiv der abgeschlossenen Tage, Neuberechnung (die Energie je Zeitraum zeigen die

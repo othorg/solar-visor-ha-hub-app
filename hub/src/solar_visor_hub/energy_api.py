@@ -28,7 +28,7 @@ from .power_history import series as power_columns_series
 
 PUBLIC_CATEGORIES = ("pv_internal", "external", "generation", "consumption", "wallbox", "home",
                      "battery_charge", "battery_discharge", "grid_import", "grid_export", "mppt1", "mppt2", "mppt3",
-                     *SUPPLY)
+                     "s10_string1", "s10_string2", *SUPPLY)
 WEEK_BLOCK_HOURS = 6                 # week view: 28 bars of 6 local hours (user decision 2026-10-05)
 JOB_THRESHOLD_DAYS = 7
 PROVISIONAL = timedelta(minutes=2)

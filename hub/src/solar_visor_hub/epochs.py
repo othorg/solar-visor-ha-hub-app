@@ -33,9 +33,10 @@ from .profile import (  # noqa: F401 – re-exported: the plant's epochs live in
 )
 from .profile_types import T_MAX, SeriesSpec  # noqa: F401 – re-exported
 
-CALCULATION_VERSION = 12  # 9: SOC-step bound, 10: P4 review (idle vetoes, per-source counter hold, absent sources),
+CALCULATION_VERSION = 13  # 9: SOC-step bound, 10: P4 review (idle vetoes, per-source counter hold, absent sources),
                           # 11: coverage in seconds (P5 review), 12: idle across SOC drift, PV zero after the night,
-                          # nothing applicable before the data start (gap analysis 2026-10-08)
+                          # nothing applicable before the data start (gap analysis 2026-10-08),
+                          # 13: E3/DC string energy (s10_string1/2) in the energy engine
 
 STATUS_LOOKBACK = timedelta(days=30)
 LOOKBACK = timedelta(hours=48)

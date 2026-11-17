@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0
+
+- Web interface, *Overview* → *Now*: the energy flow of the dashboard card instead of a table of live values. Tapping a
+  device shows its current values below the diagram (strings, voltages, charge level …); one line below keeps the
+  connection to Home Assistant, the time zone and the balance residual.
+- Dashboard card: every data point has an English name now (English Home Assistant).
+
 ## 0.3.0
 
 - Dashboard card `custom:solar-visor-card`: the energy flow of the Solar Visor apps as a Home Assistant dashboard card –

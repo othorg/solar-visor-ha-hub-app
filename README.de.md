@@ -15,7 +15,8 @@ Sie **schaltet nie etwas**: keine Dienstaufrufe, keine Schreibzugriffe auf Home 
 - **Anlagenmodell**: Netz, bis zu drei PV-Erzeuger (mit Strings), Batterie, Wallbox und weitere Verbraucher – jeder
   Datenpunkt wird in der Web-Oberfläche einem Home-Assistant-Sensor zugeordnet, mit Prüfung von Einheiten, Vorzeichen
   und fehlenden Werten.
-- **Übersicht**: Live-Werte der Anlage und die Verbindung zu Home Assistant.
+- **Übersicht**: der Energiefluss der Anlage wie in den Solar-Visor-Apps – ein Tipp auf ein Gerät zeigt seine
+  aktuellen Werte – und die Verbindung zu Home Assistant.
 - **Dashboard-Symbole**: ein Symbol je Modul (Solarmodul, Haus, Batterie, Strommast, Wallbox, Wohnmobil, Stecker) für
   das Dashboard der Solar-Visor-Apps und die Dashboard-Karte.
 - **Dashboard-Karte**: der Energiefluss der Solar-Visor-Apps als Karte für Home-Assistant-Dashboards – ein Tipp auf

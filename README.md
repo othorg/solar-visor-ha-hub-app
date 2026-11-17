@@ -14,7 +14,8 @@ It **never switches anything**: no service calls, no writes to Home Assistant, n
 
 - **Plant model**: grid, up to three PV generators (with strings), battery, wallbox and extra consumers – each data
   point is assigned to a Home Assistant sensor in the web interface, with checks for units, signs and missing values.
-- **Overview**: live values of the plant and the connection to Home Assistant.
+- **Overview**: the energy flow of the plant like in the Solar Visor apps – tap a device to see its current values –
+  and the connection to Home Assistant.
 - **Dashboard symbols**: a symbol per module (solar panel, house, battery, pylon, wallbox, motorhome, plug) for the
   dashboard of the Solar Visor apps and the dashboard card.
 - **Dashboard card**: the energy flow of the Solar Visor apps as a Home Assistant dashboard card – tap a device to see

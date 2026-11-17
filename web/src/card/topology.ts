@@ -159,13 +159,17 @@ const POINT_LABELS_DE: Record<string, string> = {
   storage_soc: "Speicher-Ladezustand", voltage: "Spannung", current: "Strom",
 };
 const POINT_LABELS_EN: Record<string, string> = {
-  power: "Power", import_power: "Import", export_power: "Export", soc: "State of charge", storage_power: "Storage",
-  storage_soc: "Storage charge",
+  power: "Power", ac_power: "AC power", dc_power: "DC power", energy_total: "Meter reading", status: "Status",
+  import_power: "Import", export_power: "Export", import_energy: "Import total", export_energy: "Export total",
+  soc: "State of charge", capacity: "Installed capacity", max_charge_power: "Max. charge power",
+  max_discharge_power: "Max. discharge power", charge_energy: "Charged", discharge_energy: "Discharged",
+  plugged: "Plug", charging: "Charging", mode: "Charge mode", storage_power: "Storage",
+  storage_soc: "Storage charge", voltage: "Voltage", current: "Current",
 };
 
 export function pointLabel(point: string, lang: "de" | "en" = "de"): string {
   const phase = /^phase_(\d+)/.exec(point);
   if (phase) return `Phase ${phase[1]}`;
-  const label = (lang === "en" ? POINT_LABELS_EN[point] : undefined) ?? POINT_LABELS_DE[point];
+  const label = (lang === "en" ? POINT_LABELS_EN : POINT_LABELS_DE)[point];
   return label ?? point.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

@@ -38,6 +38,7 @@ LEGACY_CATEGORIES = {
     "wallbox": "wallbox", "home": "home", "battery_charge": "battery.charge", "battery_discharge": "battery.discharge",
     "grid_import": "grid.import", "grid_export": "grid.export",
     "mppt1": "pv_2.string_1", "mppt2": "pv_2.string_2", "mppt3": "pv_2.string_3",
+    "s10_string1": "pv_1.string_1", "s10_string2": "pv_1.string_2",
     "supply_grid": "supply.grid", "supply_battery": "supply.battery", "supply_pv_internal": "supply.pv_1",
     "supply_external": "supply.pv_2",
 }

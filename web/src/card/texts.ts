@@ -43,6 +43,10 @@ const EN: Texts = {
   opensHistory: "opens the history",
 };
 
+export function textsFor(lang: "de" | "en"): Texts {
+  return lang === "de" ? DE : EN;
+}
+
 export function texts(hass: Hass | undefined): Texts {
-  return (hass?.locale?.language ?? hass?.language ?? "de").startsWith("de") ? DE : EN;
+  return textsFor((hass?.locale?.language ?? hass?.language ?? "de").startsWith("de") ? "de" : "en");
 }

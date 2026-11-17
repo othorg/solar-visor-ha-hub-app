@@ -1,22 +1,19 @@
-// Overview: connection to Home Assistant, the main live values with their state, the balance residual.
+// Overview „Jetzt“: the energy flow of the apps and the dashboard card (user decision 2026-11-17: the diagram instead of
+// the table of live values), below it one line with the connection to Home Assistant, the time zone and the balance
+// residual, and the metrics without a valid value.
 import { useEffect, useState } from "react";
 import { get } from "./api";
 import { ErrorNote } from "./common";
-import { DICTIONARIES, useI18n, type TextKey } from "./i18n";
+import { FlowDashboard } from "./FlowDashboard";
+import { useI18n } from "./i18n";
 import { formatValue } from "./plant";
 
 interface Overview {
   mode: string;
   ha_connected: boolean;
   timezone: string | null;
-  live: { metric_id: string; name: string | null; value: number | boolean | string | null; unit: string; state: string;
-          reasons: string[] }[];
   balance_residual_w: number | null;
   not_ok: string[];
-}
-
-function has(key: string): key is TextKey {
-  return key in DICTIONARIES.de;
 }
 
 export function LiveCard() {
@@ -33,38 +30,23 @@ export function LiveCard() {
       clearInterval(timer);
     };
   }, []);
-  const label = (m: string) => {
-    if (has(`live.metric.${m}`)) return t(`live.metric.${m}` as TextKey);
-    const [mid] = m.split(".");
-    return has(`module.${mid}`) ? t(`module.${mid}` as TextKey) : m;
-  };
   return (
     <section className="card" aria-labelledby="live-title">
       <h2 id="live-title">{t("live.title")}</h2>
+      <FlowDashboard />
       <ErrorNote error={error} />
       {o && (
         <>
-          <dl className="facts">
-            <dt>{t("live.ha")}</dt>
-            <dd className={o.ha_connected ? "ok" : "error"}>{t(o.ha_connected ? "live.ha.connected" : "live.ha.disconnected")}</dd>
-            <dt>{t("live.timezone")}</dt>
-            <dd>{o.timezone ?? "–"}</dd>
-            {o.live.map((m) => (
-              <div key={m.metric_id} className="fact-row">
-                <dt>{m.name || label(m.metric_id)}</dt>
-                <dd>
-                  {formatValue(m.value as number | null, m.unit)}{" "}
-                  {m.state !== "ok" && <span className="chip warning">{has(`state.${m.state}`) ? t(`state.${m.state}` as TextKey) : m.state}</span>}
-                </dd>
-              </div>
-            ))}
-            {o.live.length > 0 && (
-              <>
-                <dt>{t("live.residual")}</dt>
-                <dd>{o.balance_residual_w === null ? t("live.residual_none") : formatValue(o.balance_residual_w, "W")}</dd>
-              </>
-            )}
-          </dl>
+          <p className="flow-status">
+            <span>
+              {t("live.ha")}:{" "}
+              <span className={o.ha_connected ? "ok" : "error"}>{t(o.ha_connected ? "live.ha.connected" : "live.ha.disconnected")}</span>
+            </span>
+            <span>{t("live.timezone")}: {o.timezone ?? "–"}</span>
+            <span>
+              {t("live.residual")}: {o.balance_residual_w === null ? t("live.residual_none") : formatValue(o.balance_residual_w, "W")}
+            </span>
+          </p>
           {o.not_ok.length > 0 && <p className="note">{t("live.not_ok", { metrics: o.not_ok.join(", ") })}</p>}
         </>
       )}

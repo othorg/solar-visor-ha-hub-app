@@ -8,9 +8,14 @@ import { EdgeGeometry, FlowLayout, isJunction, type FlowNode, type Point } from 
 import type { PlantSnapshot } from "./model";
 import { edgeColor, nodeColor, sourceColor } from "./palette";
 import { glowLevel, nodeText, readingOrder, usableSoc } from "./presentation";
-import type { CardState } from "./renderer";
+import type { CardSensor } from "./api";
+import type { CardState } from "./panel";
 import type { Texts } from "./texts";
 import type { Topology } from "./topology";
+
+/** Whether a node takes a click: the card opens Home Assistant's history, so only nodes with sensors do. */
+export type Clickable = (id: string, sensors: Record<string, CardSensor[]>) => boolean;
+const HAS_SENSORS: Clickable = (id, sensors) => (sensors[id]?.length ?? 0) > 0;
 
 export interface View {
   render(state: CardState, topology: Topology | null, t: Texts): void;
@@ -71,7 +76,8 @@ function reducedMotion(): boolean {
   }
 }
 
-export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => void): View {
+export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => void,
+                           clickableNode: Clickable = HAS_SENSORS): View {
   const prefix = `sv${++instances}`;
   const box = document.createElement("div");
   box.className = "sv";
@@ -177,7 +183,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
   }
 
   function drawStatic(topology: Topology, snapshot: PlantSnapshot | null, stale: boolean, t: Texts,
-                      sensors: Record<string, unknown[]>): void {
+                      sensors: Record<string, CardSensor[]>): void {
     const L = layout as FlowLayout;
     const motionOff = reducedMotion();
     const wires = flowWires(snapshot, topology, stale);
@@ -226,7 +232,7 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
       const node = L.nodes.get(id);
       if (!node) continue;
       const text = nodeText(id, topology, snapshot, stale, t.lang);
-      const clickable = (sensors[id]?.length ?? 0) > 0;
+      const clickable = clickableNode(id, sensors);
       const hit = el("circle", { cx: node.center.x, cy: node.center.y, r: node.radius, class: clickable ? "sv-hit" : "sv-hit none",
                                  role: clickable ? "button" : "img",
                                  "aria-label": clickable ? `${text.spoken}. ${t.opensHistory}` : text.spoken });

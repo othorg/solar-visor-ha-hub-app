@@ -606,3 +606,40 @@ textarea {
   min-width: 0;
   flex: 1;
 }
+
+/* --- overview „Jetzt“: the energy flow of the dashboard card ---------------------------------------------------- */
+.flow-host {
+  max-width: 560px;          /* the diagram is drawn for a phone width; larger it only gets coarse */
+  margin: 0 auto 8px;
+}
+
+.flow-node {
+  max-width: 560px;
+  margin: 0 auto 8px;
+}
+
+.flow-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.flow-node-head h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.flow .hint {
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.flow-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
