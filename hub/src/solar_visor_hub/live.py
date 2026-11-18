@@ -21,12 +21,14 @@ from .models import (
     Unit,
 )
 from .normalize import normalize
-from .trust import ChargepointTrust
+from .trust import ChargepointTrust, GridMeterWatch
 
 _STATE_RANK = {MetricState.OK: 0, MetricState.STALE: 1, MetricState.IMPLAUSIBLE: 2, MetricState.UNKNOWN: 3}
 COMPARABLE_WINDOW = timedelta(seconds=15)
 # Metrics computed by the hub (single source of truth, also used by /v1/capabilities)
 DERIVED_METRICS: tuple[str, ...] = ("generation_total", "home_power")
+# grid power (+ import) and the counters it must advance (trust.GridMeterWatch): metric → direction
+GRID_METER = {"grid_power": "", "grid_import_energy": "import", "grid_export_energy": "export"}
 
 
 def worst(*states: MetricState) -> MetricState:
@@ -56,6 +58,8 @@ class LiveModel:
     discarded_events: dict[str, int] = field(default_factory=dict)
     # openWB trust rules for the (single) logical charge point (plan §3.3 step 3)
     trust: ChargepointTrust = field(default_factory=ChargepointTrust)
+    # grid counters that should advance by the grid power (frozen meter integration, 2026-11-17)
+    meter: GridMeterWatch = field(default_factory=GridMeterWatch)
     # called when an entity switches between known and unknown/unavailable (journal captures blips
     # shorter than its polling interval); argument: event time
     on_quality_edge: Callable[[datetime], None] | None = None
@@ -99,6 +103,14 @@ class LiveModel:
     def _feed_trust(self, metrics: list[MetricMapping], raw_state: str | None, unit: str | None,
                     at: datetime, *, baseline: bool, reset_counter: bool = False) -> None:
         for m in metrics:
+            if m.metric_id in GRID_METER:
+                value = normalize(m, raw_state, unit).value
+                num = float(value) if isinstance(value, float) else None
+                if m.metric_id == "grid_power":
+                    self.meter.on_power(num, at, baseline=baseline)
+                else:
+                    self.meter.on_counter(GRID_METER[m.metric_id], num, at)
+                continue
             if m.metric_id not in ("wallbox_power", "wallbox_energy_total"):
                 continue
             value = normalize(m, raw_state, unit).value
@@ -149,6 +161,8 @@ class LiveModel:
         reset = any(self.mapping.metrics.get(m) != mapping.metrics.get(m) for m in wb_ids)
         wanted = set(mapping.entities())
         self.entities = {e: st for e, st in self.entities.items() if e in wanted}
+        if any(self.mapping.metrics.get(m) != mapping.metrics.get(m) for m in GRID_METER):
+            self.meter = GridMeterWatch()            # other sensors: the next readings set new baselines
         self.mapping = mapping
         if reset:
             # fresh trust, but seeded from retained states: an unchanged value re-delivered on reconnect is
@@ -220,6 +234,7 @@ class LiveModel:
                                                     [pv, ext], now)
 
         self._apply_trust(metrics, now)
+        self._apply_meter(metrics, now)
         cons, wb = metrics["consumption_total"], metrics["wallbox_power"]
         home_val: float | None = None
         home_state = MetricState.UNKNOWN
@@ -274,6 +289,12 @@ class LiveModel:
         if override is not None or reasons:
             metrics["wallbox_power"] = wb.model_copy(update={"state": override or wb.state,
                                                              "reasons": [*wb.reasons, *reasons]})
+
+    def _apply_meter(self, metrics: dict[str, MetricPoint], now: datetime) -> None:
+        for mid, direction in GRID_METER.items():
+            p = metrics.get(mid)
+            if direction and p is not None and p.state is MetricState.OK and self.meter.silent_since(direction, now):
+                metrics[mid] = p.model_copy(update={"state": MetricState.STALE, "reasons": [*p.reasons, "counter_stalled"]})
 
     @staticmethod
     def _edges(metrics: dict[str, MetricPoint], external_id: str) -> list[FlowEdge]:

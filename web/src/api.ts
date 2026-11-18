@@ -80,4 +80,8 @@ export interface Addresses {
   admin_url: string | null;
   suggested_read_url: string | null;
   suggested_admin_url: string | null;
+  /** over Home Assistant (integration „Solar Visor“) – read and admin alike; works wherever HA is reachable */
+  suggested_ha_url: string | null;
+  /** the integration forwarded a request recently */
+  bridge_seen: boolean;
 }

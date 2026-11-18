@@ -150,8 +150,9 @@ def test_routes_and_pairing(tmp_path):
     assert len(p["code"]) == 8 and p["payload"] is None                             # no addresses yet
     settings.set_addresses(Addresses(read_url="https://solar.example.org", admin_url="http://192.168.1.1:8081"))
     p = c.post("/api/pairing", json={}, headers=W).json()
-    assert p["scope"] == "admin" and p["payload"] == (
-        "solarvisor://pair?v=1&read=https%3A%2F%2Fsolar.example.org&admin=http%3A%2F%2F192.168.1.1%3A8081&code=" + p["code"])
+    assert p["scope"] == "admin" and p["payload"].startswith(
+        "solarvisor://pair?v=1&read=https%3A%2F%2Fsolar.example.org&admin=http%3A%2F%2F192.168.1.1%3A8081&code="
+        + p["code"] + "&invite=")                                                    # invitation: remote pairing
     token, _ = devices.enroll(p["code"], "iPhone")
     assert token and token not in p["payload"]
     assert pairing_payload(Addresses(read_url="https://a"), "1") is None

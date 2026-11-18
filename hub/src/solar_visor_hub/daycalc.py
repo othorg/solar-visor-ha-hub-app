@@ -47,12 +47,38 @@ SOC_SETTLE = timedelta(minutes=45)
 # apart; the inferences above (idle battery, PV zero after the night) only hold there – never across a real outage
 # (e.g. 2026-05-03 19:10Z → 05-04 05:20Z: the morning PV would otherwise count as 0)
 PIPELINE_GAP = timedelta(minutes=15)
+# Stalled or missing billing meter (2026-11-17: the IOmeter integration froze at 10:23:33Z without ever turning
+# 'unavailable' and came back with a reload at 20:36:04Z; the evening import – 5.7 kWh by the E3/DC meter – was 0 Wh at
+# full coverage). The meter writes on change (IOmeter: every ~36 s while energy flows, received up to 78 s late): an
+# interval without a reading in which the E3/DC grid measurement shows at least SILENT_METER_WH of the same direction
+# inside one quarter hour – at least SILENT_METER_LAG before the meter's next reading or the window end, so the meter
+# would have reported it – is a stall ('meter_silent'); a time the meter is reported unavailable (journal) is one too
+# ('meter_unavailable'). Both measure at the house connection (user decisions 2026-11-17): while a stall lasts the E3/DC
+# measurement stands in for the meter; once the meter reports again, its delta over the whole interval follows the
+# E3/DC profile instead of a straight line – normalised once over the interval, also where it reaches into other days
+# (``WideSeries``), so every day keeps its share and nothing is counted twice. Both are marked reconstructed. The E3/DC
+# regulation noise is ≈ 3 Wh per quarter hour; since the IOmeter epoch only 2026-11-17 (import) and two short export
+# gaps (2026-04-22 08:22–08:38Z, 2026-06-18 17:11–17:36Z: same total, other shape) meet the silence rule.
+SILENT_METER_WH = 50.0
+SILENT_METER_LAG = timedelta(minutes=5)
+QUARTER = timedelta(minutes=15)
 
 
 @dataclass
 class RawSeries:
     points: list[Point]                     # carry-in first (if any), window points, counters: + first point after
     base: Point | None = None               # counters: highest trusted reading before the window (same epoch)
+
+
+@dataclass
+class WideSeries:
+    """Readings of a measurement over [start, end) around the window (carry-in first) and its journal vetoes there:
+    the grid meter's counter intervals that reach into other days need the second meter's profile and the meter's
+    unavailability over the whole interval (``SILENT_METER_WH``)."""
+    start: datetime
+    end: datetime
+    points: list[Point] = field(default_factory=list)
+    invalid: list[tuple[datetime, datetime]] = field(default_factory=list)
 
 
 @dataclass
@@ -135,6 +161,84 @@ def _covered(segs: list[Segment]) -> list[tuple[datetime, datetime]]:
 
 def _seconds(iv: list[tuple[datetime, datetime]], a: datetime, b: datetime) -> float:
     return sum(max(0.0, (min(e, b) - max(s, a)).total_seconds()) for s, e in iv)
+
+
+def _quarters(cross: Sequence[Segment], a: datetime, b: datetime) -> dict[datetime, float]:
+    """Energy (Wh) of ``cross`` inside [a, b) per UTC quarter hour (the slots of a local day) – one pass, sorted input."""
+    out: dict[datetime, float] = {}
+    for sg in cross:
+        if sg.end <= a:
+            continue
+        if sg.start >= b:
+            break
+        s_, e_ = max(sg.start, a), min(sg.end, b)
+        while s_ < e_:
+            q0 = s_.replace(minute=s_.minute - s_.minute % 15, second=0, microsecond=0)
+            u = min(e_, q0 + QUARTER)
+            out[q0] = out.get(q0, 0.0) + sg.value * (u - s_).total_seconds() / 3600.0
+            s_ = u
+    return out
+
+
+def _contradicted(cross: Sequence[Segment], a: datetime, b: datetime) -> bool:
+    """The second meter measured at least ``SILENT_METER_WH`` inside one quarter hour of [a, b)."""
+    return b > a and max(_quarters(cross, a, b).values(), default=0.0) >= SILENT_METER_WH
+
+
+def _clip(segs: Sequence[Segment], a: datetime, b: datetime, factor: float = 1.0) -> list[Segment]:
+    return [Segment(max(s.start, a), min(s.end, b), s.value * factor) for s in segs if s.end > a and s.start < b]
+
+
+def _cross(inside: Sequence[Segment], category: str, specs: Sequence[SeriesSpec], wide: dict[str, WideSeries],
+           start: datetime, end: datetime) -> list[Segment]:
+    """The second grid meter of one direction: its window segments plus, from ``wide``, the same rules before and
+    after the window."""
+    out = list(inside)
+    for spec in specs:
+        if spec.kind != "power" or category not in spec.categories or spec.measurement not in wide:
+            continue
+        w = wide[spec.measurement]
+        sign = 1.0 if spec.categories[0] == category else -1.0
+        part = [Segment(s.start, s.end, max(0.0, sign * s.value))
+                for s in hold_segments(w.points, w.start, w.end, spec.hold, w.invalid)]
+        out += _clip(part, w.start, start) + _clip(part, end, w.end)
+    return sorted(out, key=lambda s: s.start)
+
+
+Counter = tuple[str, list[Point], list[Segment], list[Segment]]     # measurement, trusted readings, hold, vetoed hold
+
+
+def _unstall(segs: list[Segment], counters: Sequence[Counter], cross: Sequence[Segment], end: datetime,
+             invalid: dict[str, list[tuple[datetime, datetime]]],
+             wide: dict[str, WideSeries]) -> tuple[list[Segment], list[tuple[datetime, datetime, str]]]:
+    """Billing-meter segments with its stalls (``SILENT_METER_WH``) taken over by the second meter ``cross`` of the same
+    direction. Returns the segments (they may reach outside the window) and the stalled intervals with their reason.
+    A closed interval is only reshaped where the second meter covers all of it (else its straight line stays)."""
+    stalled: list[tuple[datetime, datetime, str]] = []
+    covered = _covered(list(cross))
+    for m, trusted, raw_hold, hold in counters:
+        off_all = merge_intervals(list(invalid.get(m, ())) + (wide[m].invalid if m in wide else []))
+        for p, q in zip(trusted, trusted[1:], strict=False):
+            if q.t - p.t <= SILENT_METER_LAG or p.value is None or q.value is None:
+                continue
+            off = _intersect(off_all, [(p.t, q.t)])
+            if not off and not _contradicted(cross, p.t, q.t - SILENT_METER_LAG):
+                continue
+            share = _quarters(cross, p.t, q.t)
+            profile = sum(share.values())
+            if profile <= 0 or _seconds(covered, p.t, q.t) < (q.t - p.t).total_seconds() - 1:
+                continue
+            segs = cut(segs, p.t, q.t) + _clip(cross, p.t, q.t, (q.value - p.value) / profile)
+            stalled.append((p.t, q.t, "meter_unavailable" if off else "meter_silent"))
+        # the meter reported unavailable during its trailing hold: the second meter stands in there
+        for a, b in _intersect(_covered(raw_hold), off_all):
+            segs = segs + _clip(cross, a, b)
+            stalled.append((a, b, "meter_unavailable"))
+        for h in hold:
+            if _contradicted(cross, h.start, min(h.end, end - SILENT_METER_LAG)):
+                segs = cut(segs, h.start, h.end) + _clip(cross, h.start, h.end)
+                stalled.append((h.start, h.end, "meter_silent"))
+    return segs, stalled
 
 
 def _status_off(points: Sequence[Point], start: datetime, end: datetime) -> list[tuple[datetime, datetime]]:
@@ -279,7 +383,8 @@ def _battery_idle(segs: list[Segment], pts: list[Point], soc: list[Point], start
 
 def compute_day(slots: Sequence[Slot], specs: Sequence[SeriesSpec], raw: dict[str, RawSeries],
                 invalid: dict[str, list[tuple[datetime, datetime]]] | None = None,
-                window_end: datetime | None = None, evidence: Sequence[Point] | None = None) -> DayResult:
+                window_end: datetime | None = None, evidence: Sequence[Point] | None = None,
+                wide: dict[str, WideSeries] | None = None) -> DayResult:
     """``evidence``: house consumption readings for computations without the consumption spec (motorhome, PV detail
     charts, KOSTAL AC line) – the zero inferences need the same proof of a working pipeline there."""
     invalid = invalid or {}
@@ -308,6 +413,7 @@ def compute_day(slots: Sequence[Slot], specs: Sequence[SeriesSpec], raw: dict[st
     counter_spans: dict[str, tuple[datetime, datetime]] = {}
     wallbox_specs: list[tuple[SeriesSpec, datetime, datetime]] = []
     counter_tl: dict[str, list[Segment]] = {}
+    counter_parts: dict[str, list[Counter]] = {}
 
     # evidence series first (status, SOC) – power series below depend on them regardless of spec order
     for spec in specs:
@@ -351,6 +457,7 @@ def compute_day(slots: Sequence[Slot], specs: Sequence[SeriesSpec], raw: dict[st
             # when – its average power is an estimate (energy itself is measured)
             t.filled += ct.estimated
             counter_tl.setdefault(spec.categories[0], []).extend(ct.segments + hold)
+            counter_parts.setdefault(spec.categories[0], []).append((spec.measurement, ct.trusted, ct.hold, hold))
             if ct.spans_from is not None and (spans_from is None or ct.spans_from < spans_from):
                 spans_from = ct.spans_from
             if ct.closed_at is not None and (closed_at is None or ct.closed_at > closed_at):
@@ -407,9 +514,19 @@ def compute_day(slots: Sequence[Slot], specs: Sequence[SeriesSpec], raw: dict[st
             if hi <= lo or src is None:                # no source at all (before the data start): not a gap
                 continue
             sel.applicable.append((lo, hi))
-            sel.segs += [Segment(max(s.start, lo), min(s.end, hi), s.value) for s in src.segs if s.end > lo and s.start < hi]
-            sel.reconstructed += _intersect(src.reconstructed, [(lo, hi)])
-            sel.filled += _intersect(src.filled, [(lo, hi)])
+            segs, stalled = src.segs, []
+            if src is meter and e3dc is not None:      # stalled meter: the E3/DC measurement stands in (SILENT_METER_WH)
+                cross = _cross(e3dc.segs, f"grid_{direction}_e3dc", specs, wide or {}, start, end)
+                segs, stalled = _unstall(segs, counter_parts.get(f"grid_{direction}_meter", []), cross, end, invalid,
+                                         wide or {})
+                stalled = [(max(a_, lo), min(b_, hi), r) for a_, b_, r in stalled if min(b_, hi) > max(a_, lo)]
+                for j, sl in enumerate(slots):
+                    for a_, b_, r in stalled:
+                        if sl.end > a_ and sl.start < b_:
+                            sel.reasons.setdefault(j, set()).add(r)
+            sel.segs += _clip(segs, lo, hi)
+            sel.reconstructed += _intersect(src.reconstructed, [(lo, hi)]) + [(a_, b_) for a_, b_, _ in stalled]
+            sel.filled += _intersect(src.filled, [(lo, hi)]) + [(a_, b_) for a_, b_, _ in stalled]
             if lo >= IOMETER_FROM:
                 sel.method = "counter_delta"
         tl[f"grid_{direction}"] = sel

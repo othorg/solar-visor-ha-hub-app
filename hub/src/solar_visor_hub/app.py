@@ -18,12 +18,13 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Res
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from . import profile
 from . import API_VERSION, __version__
 from .config import MappingConfig, SecretFiles, load_mapping
 from .runtime import EMPTY_MAPPING
+from .bridge import BRIDGE_VERSIONS, VERSIONS_HEADER, note_bridge
 from .devices import Device, DeviceStore, PairingError
 import httpx
 
@@ -183,6 +184,11 @@ def create_public_app(mapping: MappingConfig | None = None, live: LiveModel | No
     _sanitized_validation_errors(app)
     app.add_middleware(GZipMiddleware, minimum_size=4096)   # energy day ≈ 450 KB JSON, power ≈ 60–400 KB
 
+    @app.middleware("http")
+    async def bridge_mark(request: Request, call_next: Any) -> Any:
+        note_bridge(request.headers)               # forwarded by the Home Assistant integration (bridge.py)
+        return await call_next(request)
+
     def require_read(authorization: str | None = Header(default=None)) -> Device:
         device = devices.authenticate(_bearer(authorization), "read") if devices else None
         if device is None:
@@ -195,6 +201,7 @@ def create_public_app(mapping: MappingConfig | None = None, live: LiveModel | No
 
     @app.get("/health/ready")
     def health_ready(response: Response) -> dict[str, str]:
+        response.headers[VERSIONS_HEADER] = ",".join(str(v) for v in BRIDGE_VERSIONS)
         source = live if live is not None else plant_live       # a plant without the legacy profile has no v1 model
         if source is None and setup is not None:
             status = "setup" if setup.connected else "degraded"
@@ -390,8 +397,17 @@ def create_public_app(mapping: MappingConfig | None = None, live: LiveModel | No
 
 
 class EnrollRequest(BaseModel):
-    code: str = Field(min_length=8, max_length=8, pattern=r"^\d{8}$")
+    """Exactly one of ``code`` (8 digits, typed in at home) and ``invite`` (the pairing text's invitation, from
+    anywhere – plan ha-remote-access §3.1)."""
+    code: str | None = Field(default=None, min_length=8, max_length=8, pattern=r"^\d{8}$")
+    invite: str | None = Field(default=None, min_length=32, max_length=32, pattern=r"^[A-Za-z0-9_-]{32}$")
     device_name: str = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def _one_secret(self) -> EnrollRequest:
+        if (self.code is None) == (self.invite is None):
+            raise ValueError("code or invite")
+        return self
 
 
 class DelegateRequest(BaseModel):
@@ -427,12 +443,23 @@ class _FailureLimiter:
 
     def take(self) -> bool:
         """Reserves one event if the limit allows it (check and record in one step)."""
+        return self.reserve() is not None
+
+    def reserve(self) -> float | None:
+        """Counts an attempt before it runs (concurrent attempts cannot exceed the limit); ``release`` takes it back
+        when the attempt succeeded, so only failures remain counted."""
         with self._lock:
             self._prune()
             if len(self.failures) >= self.limit:
-                return False
-            self.failures.append(time.monotonic())
-            return True
+                return None
+            stamp = time.monotonic()
+            self.failures.append(stamp)
+            return stamp
+
+    def release(self, stamp: float) -> None:
+        with self._lock:
+            if stamp in self.failures:
+                self.failures.remove(stamp)
 
 
 Probe = Callable[[], Awaitable[tuple[str, str]]]
@@ -465,7 +492,16 @@ def create_admin_app(devices: DeviceStore | None = None, store: MappingStore | N
     """``mapping_locked``: a plant is the source of truth – the old mapping is shown, not edited (409)."""
     app = FastAPI(title="Solar Visor Hub – admin (LAN only)", version=__version__, docs_url=None, redoc_url=None, openapi_url=None)
     _sanitized_validation_errors(app)
-    limiter = _FailureLimiter()
+
+    @app.middleware("http")
+    async def bridge_mark(request: Request, call_next: Any) -> Any:
+        note_bridge(request.headers)
+        return await call_next(request)
+
+    # separate budgets: a flood of wrong codes must not block invitations or the watch, and vice versa
+    code_failures = _FailureLimiter()                         # 8 digits: 10 failures / 10 min (whole listener)
+    invite_failures = _FailureLimiter(limit=100, window_s=600)  # 192-bit invitations: unguessable, only against load
+    delegate_failures = _FailureLimiter()
     issued = _FailureLimiter(limit=20, window_s=3600)   # delegations per hour (whole listener)
 
     def require_admin(authorization: str | None = Header(default=None)) -> Device:
@@ -486,26 +522,32 @@ def create_admin_app(devices: DeviceStore | None = None, store: MappingStore | N
         """LAN only: a paired device derives a read token for its companion (watch); replaces an older one."""
         if devices is None:
             raise HTTPException(status_code=503, detail="device store unavailable")
-        if limiter.blocked() or not issued.take():   # issuance is bounded too (each one is a database write)
+        slot = delegate_failures.reserve()
+        if slot is None:
+            raise HTTPException(status_code=429, detail="too many attempts")
+        if not issued.take():                         # issuance is bounded too (each one is a database write)
+            delegate_failures.release(slot)
             raise HTTPException(status_code=429, detail="too many attempts")
         try:
             token = devices.delegate(_bearer(authorization), body.device_name)
         except PairingError:
-            limiter.record()
             raise HTTPException(status_code=403, detail="not allowed") from None
+        delegate_failures.release(slot)
         return EnrollResponse(token=token, scope="read")
 
     @app.post("/admin/v1/devices/enroll", response_model=EnrollResponse)
     def enroll(body: EnrollRequest) -> EnrollResponse:
         if devices is None:
             raise HTTPException(status_code=503, detail="device store not available")
-        if limiter.blocked():
+        failures = code_failures if body.code is not None else invite_failures
+        slot = failures.reserve()
+        if slot is None:
             raise HTTPException(status_code=429, detail="too many failed attempts")
         try:
-            token, scope = devices.enroll(body.code, body.device_name)
+            token, scope = devices.enroll(body.code, body.device_name, invite=body.invite)
         except PairingError:
-            limiter.record()
             raise HTTPException(status_code=403, detail="invalid or expired pairing code") from None
+        failures.release(slot)
         return EnrollResponse(token=token, scope=scope)
 
     # --- mapping editor (P2 WP5) ------------------------------------------------------------

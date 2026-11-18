@@ -143,6 +143,10 @@ class PlantProblem(_Strict):
     metric_id: str
     state: MetricState
     reasons: list[str] = Field(default_factory=list)
+    since: UtcDatetime | None = Field(None, exclude_if=lambda v: v is None,
+                                      description="Since when the source shows this: its last report for "
+                                                  "'report_too_old', else its last change (a counter that does not "
+                                                  "advance: its last value); absent when not known")
 
 
 class PlantJournalItem(_Strict):

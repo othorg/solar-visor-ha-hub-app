@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Solar Visor",
+        "description": "Makes the Solar Visor hub reachable for the apps at this Home Assistant's address (/api/solar_visor) – wherever Home Assistant is reachable. Host and ports of the hub: the add-on is found automatically; a hub running elsewhere is entered here.",
+        "data": {
+          "host": "Host of the hub",
+          "read_port": "Read port",
+          "admin_port": "Admin port"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No Solar Visor hub answers at this address.",
+      "incompatible": "The hub is too old for this integration – please update the Solar Visor Hub add-on."
+    },
+    "abort": {
+      "already_configured": "Solar Visor is already set up.",
+      "single_instance_allowed": "Solar Visor is already set up."
+    }
+  },
+  "issues": {
+    "hub_incompatible": {
+      "title": "Solar Visor hub and integration do not match",
+      "description": "The Solar Visor hub does not understand this integration's forwarding. Please update the Solar Visor Hub add-on and the integration to their latest versions."
+    }
+  }
+}

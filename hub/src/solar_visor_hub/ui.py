@@ -36,6 +36,10 @@ from pydantic import BaseModel, Field, field_validator
 
 from . import __version__
 from .app import sanitize_validation_errors
+from .bridge import SEEN as BRIDGE_SEEN
+from .bridge import ha_url
+from .ha_client import HaReadError
+from .ops_allowlist import ForbiddenOperation
 from .ui_admin import AdminContext
 from .ui_admin import register as register_admin
 from .ui_card import CardContext, is_card_path
@@ -353,16 +357,40 @@ def qr_svg(payload: str | None) -> str | None:
     return out.getvalue().decode()
 
 
-def pairing_payload(a: Addresses, code: str) -> str | None:
-    """``solarvisor://pair?v=1&read=…&admin=…&code=…`` – the contract of the QR code (fixture in contracts/)."""
+def pairing_payload(a: Addresses, code: str, invite: str | None = None) -> str | None:
+    """``solarvisor://pair?v=1&read=…&admin=…&code=…&invite=…`` – the contract of the QR code (fixture in contracts/).
+    ``invite`` lets the apps pair from anywhere (remote access over Home Assistant); apps without it use ``code``."""
     if not a.read_url or not a.admin_url:
         return None
-    return "solarvisor://pair?" + urlencode({"v": 1, "read": a.read_url, "admin": a.admin_url, "code": code})
+    fields: dict[str, Any] = {"v": 1, "read": a.read_url, "admin": a.admin_url, "code": code}
+    if invite:
+        fields["invite"] = invite
+    return "solarvisor://pair?" + urlencode(fields)
 
 
 class AddressesView(Addresses):
     suggested_read_url: str | None = None
     suggested_admin_url: str | None = None
+    suggested_ha_url: str | None = None       # over Home Assistant (integration), for read and admin alike
+    bridge_seen: bool = False                 # the integration forwarded a request recently
+
+
+async def _ha_suggestion(read: Read | None) -> str | None:
+    """Home Assistant's own addresses (cloud, external) – read-only WebSocket commands; ``None`` if HA cannot tell."""
+    if read is None:
+        return None
+    for message in ({"type": "network/url"}, {"type": "get_config"}):
+        try:
+            url = ha_url(await read(message))
+        except (HaReadError, ForbiddenOperation) as e:    # refused, unknown or not allow-listed: try the next one
+            logging.getLogger(__name__).debug("no address from %s: %s", message["type"], e)
+            continue
+        except (ConnectionError, TimeoutError, OSError) as e:   # Home Assistant unreachable: no suggestion, no waiting
+            logging.getLogger(__name__).debug("no address from Home Assistant: %s", type(e).__name__)
+            return None
+        if url:
+            return url
+    return None
 
 
 def _suggest(request: Request) -> tuple[str | None, str | None]:
@@ -401,16 +429,18 @@ def create_ui_app(ctx: UiContext) -> FastAPI:
                            running_revision=ctx.running_revision, stored_revision=ctx.stored_revision(),
                            startup_error=ctx.startup_error)
 
-    @app.get("/api/addresses", response_model=AddressesView)
-    def get_addresses(request: Request) -> AddressesView:
+    async def addresses_view(saved: Addresses, request: Request) -> AddressesView:
         read, admin = _suggest(request)
-        return AddressesView(**ctx.settings.addresses().model_dump(), suggested_read_url=read, suggested_admin_url=admin)
+        return AddressesView(**saved.model_dump(), suggested_read_url=read, suggested_admin_url=admin,
+                             suggested_ha_url=await _ha_suggestion(ctx.read), bridge_seen=BRIDGE_SEEN.recently())
+
+    @app.get("/api/addresses", response_model=AddressesView)
+    async def get_addresses(request: Request) -> AddressesView:
+        return await addresses_view(ctx.settings.addresses(), request)
 
     @app.put("/api/addresses", response_model=AddressesView)
-    def put_addresses(body: Addresses, request: Request) -> AddressesView:
-        saved = ctx.settings.set_addresses(body)
-        read, admin = _suggest(request)
-        return AddressesView(**saved.model_dump(), suggested_read_url=read, suggested_admin_url=admin)
+    async def put_addresses(body: Addresses, request: Request) -> AddressesView:
+        return await addresses_view(ctx.settings.set_addresses(body), request)
 
     if ctx.editing is not None:
         register_plant(app, ctx.editing)
@@ -423,12 +453,12 @@ def create_ui_app(ctx: UiContext) -> FastAPI:
     @app.post("/api/pairing", response_model=PairingView)
     def pairing(body: PairingIn) -> PairingView:
         """A one-time code for the apps (10 minutes) and the pairing text built from the addresses. The text carries
-        the code, never a device token; the apps redeem it over port B as before (P5 adds scanning)."""
+        the code and the invitation, never a device token; the apps redeem it at the admin address."""
         if ctx.devices is None:
             raise HTTPException(status_code=503, detail="devices unavailable")
-        code = ctx.devices.create_pairing_code(body.scope)
+        code, invite = ctx.devices.create_pairing(body.scope)
         a = ctx.settings.addresses()
-        payload = pairing_payload(a, code)
+        payload = pairing_payload(a, code, invite)
         return PairingView(code=code, scope=body.scope, valid_minutes=10, read_url=a.read_url, admin_url=a.admin_url,
                            payload=payload, qr_svg=qr_svg(payload))
 

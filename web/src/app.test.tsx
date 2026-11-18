@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { DevicesSection } from "./DevicesSection";
 import { PointsSection } from "./PointsSection";
-import { get, send, WRITE_HEADER } from "./api";
+import { type Addresses, get, send, WRITE_HEADER } from "./api";
 import { DICTIONARIES, format, I18nProvider, initialLanguage } from "./i18n";
 import css from "./styles.css?raw";
 
@@ -57,8 +57,10 @@ describe("api", () => {
 });
 
 describe("app", () => {
-  function stubHub(addresses = { read_url: null, admin_url: null, suggested_read_url: "http://ha.local:8080",
-                                 suggested_admin_url: "http://ha.local:8081" }) {
+  function stubHub(addresses: Addresses = { read_url: null, admin_url: null, suggested_read_url: "http://ha.local:8080",
+                                 suggested_admin_url: "http://ha.local:8081",
+                                 suggested_ha_url: "https://ha.example.org/api/solar_visor",
+                                 bridge_seen: false }) {
     const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
       if (url === "api/session")
         return Response.json({ user: "Ada", mode: "setup", version: "0.1.0.1", running_revision: null, stored_revision: null,
@@ -93,6 +95,40 @@ describe("app", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Saved"));
     const put = (fetcher.mock.calls as unknown as [string, RequestInit][]).find(([, i]) => i?.method === "PUT")!;
     expect(JSON.parse(String(put[1].body))).toEqual({ read_url: "https://solar.example.org", admin_url: null });
+  });
+
+  it("takes over the address over Home Assistant for both fields and hints at a missing integration", async () => {
+    const fetcher = stubHub();
+    location.hash = "#devices";
+    render(
+      <I18nProvider language="en">
+        <App />
+      </I18nProvider>,
+    );
+    const card = await screen.findByRole("region", { name: "Addresses for the apps" });
+    await within(card).findByRole("button", { name: "Use the address over Home Assistant" });
+    expect(within(card).getByRole("note").textContent).toMatch(/integration has not reported/);
+    fireEvent.click(within(card).getByRole("button", { name: "Use the address over Home Assistant" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Saved"));
+    const put = (fetcher.mock.calls as unknown as [string, RequestInit][]).find(([, i]) => i?.method === "PUT")!;
+    expect(JSON.parse(String(put[1].body))).toEqual({ read_url: "https://ha.example.org/api/solar_visor",
+                                                     admin_url: "https://ha.example.org/api/solar_visor" });
+  });
+
+  it("asks for the address by hand when Home Assistant knows no external one", async () => {
+    stubHub({ read_url: null, admin_url: null, suggested_read_url: null, suggested_admin_url: null,
+              suggested_ha_url: null, bridge_seen: true });
+    location.hash = "#devices";
+    render(
+      <I18nProvider language="en">
+        <App />
+      </I18nProvider>,
+    );
+    const card = await screen.findByRole("region", { name: "Addresses for the apps" });
+    await within(card).findByText(/knows no external address/);
+    expect(within(card).queryByRole("button", { name: "Use the address over Home Assistant" })).toBeNull();
+    expect(within(card).queryByRole("note")).toBeNull();
   });
 
   it("shows a failed load of the InfluxDB connection instead of hiding its fields", async () => {

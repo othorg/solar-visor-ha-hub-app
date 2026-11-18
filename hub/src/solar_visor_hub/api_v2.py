@@ -27,6 +27,7 @@ from .models_v2 import (
     PlantWidgetSnapshot,
     PlantFeatures,
     PlantJournalItem,
+    PlantMetric,
     PlantModuleDiagnostics,
     PlantModuleInfo,
     PlantPointInfo,
@@ -73,6 +74,14 @@ def build_capabilities(plant: Plant, timezone: str | None = None, rscp: bool = F
                              pv_peak_w=plant.pv_peak_w, rscp_pv=plant.rscp_pv)
 
 
+def problem_since(p: PlantMetric) -> datetime | None:
+    """Since when a metric's source shows its problem („IOmeter steht seit 11:23“): the last report of one that stopped
+    reporting, else its last change; none for a calculated value or while Home Assistant is away (shown on its own)."""
+    if p.derived or "ha_disconnected" in p.reasons:
+        return None
+    return p.reported_at if "report_too_old" in p.reasons else p.source_changed_at
+
+
 def build_diagnostics(live: PlantLive, journal: Journal | None, now: datetime, timezone: str | None = None,
                       subjects: dict[str, str] | None = None) -> PlantDiagnostics:
     """``subjects`` translates journal subjects written under old metric ids (legacy profile) to the plant's ids."""
@@ -86,7 +95,7 @@ def build_diagnostics(live: PlantLive, journal: Journal | None, now: datetime, t
             newest_report_age_s=round(min(ages), 1) if ages else None,
             oldest_report_age_s=round(max(ages), 1) if ages else None,
             discarded_events=live.discarded_events.get(mid, 0)))
-    problems = [PlantProblem(metric_id=mid, state=p.state, reasons=p.reasons)
+    problems = [PlantProblem(metric_id=mid, state=p.state, reasons=p.reasons, since=problem_since(p))
                 for mid, p in sorted(snap.metrics.items()) if p.state is not MetricState.OK]
     trust = [PlantTrust(module_id=mid, last_evidence_at=t.last_evidence, counter_anomalies=t.counter_anomalies)
              for mid, t in sorted(live.trust.items())]

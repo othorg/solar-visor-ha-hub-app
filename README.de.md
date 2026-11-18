@@ -84,10 +84,20 @@ des angemeldeten Benutzers und liest nur. Deshalb ist der Seitenleisten-Eintrag 
 sichtbar; wer kein Administrator ist, sieht dort statt der Web-Oberfläche einen kurzen Hinweis. Die Karte selbst kommt
 von der App und aktualisiert sich mit ihr – die Datei in `/config/www` lädt sie nur.
 
+## Fernzugriff über Home Assistant (empfohlen)
+
+Installieren Sie die Integration **Solar Visor** aus diesem Repository (HACS → *Benutzerdefinierte Repositories* →
+dieses Repository, Typ *Integration*), starten Sie Home Assistant neu und fügen Sie sie unter *Einstellungen* → *Geräte &
+Dienste* hinzu. Die Apps erreichen den Hub dann unter `https://<Ihr Home Assistant>/api/solar_visor` – überall dort, wo
+Home Assistant erreichbar ist (Home Assistant Cloud, Tailscale Funnel, eigener Reverse Proxy) –, und die Ports unten
+können aus bleiben. In der Web-Oberfläche (*Geräte & Diagnose* → *Adressen für die Apps*) die vorgeschlagene Adresse
+übernehmen, dann einen Kopplungscode erzeugen und den QR-Code mit der App scannen: Koppeln mit dem Kopplungstext geht von
+überall.
+
 ## Ports
 
-Beide Ports sind **standardmäßig aus**. Schalten Sie sie im Abschnitt *Netzwerk* der App nur ein, wenn Sie die Apps
-nutzen:
+Beide Ports sind **standardmäßig aus** und mit der Integration oben nicht nötig. Schalten Sie sie im Abschnitt
+*Netzwerk* der App nur für den direkten Zugriff im Heimnetz ein:
 
 | Port | Zweck |
 |---|---|
@@ -96,7 +106,7 @@ nutzen:
 
 ## Apps
 
-Die Solar-Visor-Apps für iPhone, Apple Watch und Mac sind nicht im App Store. Sie sind auf Anfrage über TestFlight
+Die Solar-Visor-Apps für iPhone, Apple Watch, Mac und Android sind nicht im App Store oder Play Store. Sie sind auf Anfrage über TestFlight
 erhältlich – bitte ein Issue in diesem Repository eröffnen.
 
 ## Inspiration

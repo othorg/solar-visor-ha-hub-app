@@ -66,6 +66,7 @@ describe("every code the hub reports has a text", () => {
     for (const lang of ["de", "en"] as const) {
       for (const c of codes.problems) expect(DICTIONARIES[lang], `${lang}: problem.${c}`).toHaveProperty(`problem.${c}`);
       for (const c of codes.checks) expect(DICTIONARIES[lang], `${lang}: check.${c}`).toHaveProperty(`check.${c}`);
+      for (const c of codes.reasons) expect(DICTIONARIES[lang], `${lang}: reason.${c}`).toHaveProperty(`reason.${c}`);
     }
   });
 });

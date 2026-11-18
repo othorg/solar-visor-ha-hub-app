@@ -6,7 +6,9 @@ import { cardFetch, FEED_IN_CAPABILITIES, feedInSnapshot, testSnapshot, TEST_CAP
 import { Topology } from "./card/topology";
 import { metricLabel, nodeMetrics, nodeValue } from "./FlowDashboard";
 import { I18nProvider } from "./i18n";
-import { LiveCard } from "./LiveCard";
+import { format } from "./i18n";
+import { LiveCard, problemLine, sinceText } from "./LiveCard";
+import { de, en, type TextKey } from "./texts";
 import { currentTheme, haDarkMode } from "./theme";
 
 afterEach(() => {
@@ -79,6 +81,41 @@ describe("overview „Jetzt“", () => {
     expect(screen.getByText("unbekannt")).toBeTruthy();                 // string 2 without a value
     act(() => void pv.dispatchEvent(new MouseEvent("click")));
     await waitFor(() => expect(screen.queryByText("String Ost · String 1 · Leistung")).toBeNull());
+  });
+});
+
+describe("values without a valid state (user decision 2026-11-17)", () => {
+  const tDe = (key: TextKey, params?: Record<string, string | number>) => format(de[key], params);
+  const tEn = (key: TextKey, params?: Record<string, string | number>) => format(en[key], params);
+  const now = new Date("2026-11-17T20:50:00Z");
+
+  it("names the value, the reason and since when – in the plant's time zone, with the date on another day", () => {
+    const stalled = { metric_id: "grid.import_energy", name: "Netz", state: "stale", reasons: ["counter_stalled"],
+                      since: "2026-11-17T10:23:33+00:00" };
+    expect(problemLine(stalled, "Europe/Berlin", "de", tDe, now)).toBe(
+      "Netz · Zähler Bezug: veraltet – Zähler läuft nicht weiter, obwohl laut Netzleistung Strom fließt · seit 11:23");
+    expect(problemLine({ ...stalled, reasons: ["unavailable"], state: "unknown" }, "Europe/Berlin", "en", tEn, now)).toBe(
+      "Netz · Import meter: unknown – unavailable in Home Assistant · since 11:23");
+    expect(sinceText("2026-11-16T22:30:00Z", "Europe/Berlin", "de", now)).toBe("16.11. 23:30");
+    expect(problemLine({ metric_id: "pv_1.power", name: null, state: "unknown", reasons: ["unit_mismatch:kWh->W", "new_code"],
+                         since: null }, null, "de", tDe, now)).toBe(
+      "PV-Erzeuger 1 · Leistung: unbekannt – Einheit passt nicht (kWh->W) · new_code");   // no name: the module's text
+  });
+
+  it("lists them below the flow", async () => {
+    const card = cardFetch();
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "api/overview") {
+        return Response.json({ mode: "plant_legacy", ha_connected: true, timezone: "Europe/Berlin", balance_residual_w: 35,
+                               not_ok: ["grid.import_energy"], live: [],
+                               problems: [{ metric_id: "grid.import_energy", name: "Netz", state: "stale",
+                                            reasons: ["counter_stalled"], since: new Date().toISOString() }] });
+      }
+      return card(input);
+    }));
+    render(<I18nProvider language="de"><LiveCard /></I18nProvider>);
+    expect(await screen.findByText(/^Netz · Zähler Bezug: veraltet – Zähler läuft nicht weiter.* · seit \d\d:\d\d$/)).toBeTruthy();
+    expect(screen.queryByText(/Ohne gültigen Wert: grid/)).toBeNull();
   });
 });
 

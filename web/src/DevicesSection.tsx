@@ -111,6 +111,18 @@ export function AddressesCard() {
     <section className="card" aria-labelledby="addr-title">
       <h2 id="addr-title">{t("addresses.title")}</h2>
       <p className="hint">{t("addresses.hint")}</p>
+      <p className="hint">{t("addresses.ha")}</p>
+      {a && (a.suggested_ha_url
+        ? <p className="actions">
+            <button type="button" onClick={() => {
+              setRead(a.suggested_ha_url ?? "");
+              setAdmin(a.suggested_ha_url ?? "");
+              setState("idle");
+            }}>{t("addresses.use_ha")}</button>
+            <small>{a.suggested_ha_url}</small>
+          </p>
+        : <p className="hint">{t("addresses.no_ha_url")}</p>)}
+      {a && !a.bridge_seen && <p className="hint" role="note">{t("addresses.no_bridge")}</p>}
       <ErrorNote error={loaded.error ?? error} />
       <form onSubmit={save} className="form">
         <label>

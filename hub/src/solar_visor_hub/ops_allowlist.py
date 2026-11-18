@@ -31,6 +31,8 @@ HA_WS_ALLOWED: frozenset[str] = frozenset(
         "config/entity_registry/list",
         "config/device_registry/list",
         "config/area_registry/list",
+        # plan ha-remote-access P1: Home Assistant's own addresses (cloud, external) for the apps – read-only
+        "network/url",
     }
 )
 

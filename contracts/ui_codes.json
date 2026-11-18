@@ -50,5 +50,32 @@
     "unknown_module",
     "unknown_point",
     "unsupported_schema"
+  ],
+  "reasons": [
+    "awaiting_confirmation",
+    "consumption_implausible",
+    "counter_stalled",
+    "exceeds_consumption",
+    "ha_disconnected",
+    "input_unknown",
+    "negative_consumption",
+    "negative_difference",
+    "negative_value",
+    "no_data",
+    "no_input",
+    "non_finite",
+    "not_boolean",
+    "not_numeric",
+    "percent_out_of_range",
+    "report_too_old",
+    "status_contradiction",
+    "unavailable",
+    "unconfirmed_hold",
+    "unconfirmed_zero",
+    "unit_mismatch",
+    "wallbox_assumed_zero",
+    "wallbox_implausible",
+    "wallbox_stale",
+    "wallbox_unknown"
   ]
 }

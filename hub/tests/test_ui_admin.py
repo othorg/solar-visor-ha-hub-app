@@ -37,7 +37,7 @@ class History:
         self.archive = Archive()
 
 
-def hub(tmp_path, mode="plant", history=None, influx=None):
+def hub(tmp_path, mode="plant", history=None, influx=None, now=None):
     devices = DeviceStore(tmp_path / "devices.sqlite3")
     secrets = SecretFiles(ha_token=tmp_path / "secrets" / "ha", influx_token=tmp_path / "secrets" / "influx")
     live = sample_live(MINIMAL, {"grid.power": "-500", "pv_1.power": "1200"})
@@ -45,7 +45,7 @@ def hub(tmp_path, mode="plant", history=None, influx=None):
     async def ok():
         return "ok", "reachable"
 
-    admin = AdminContext(mode=mode, snapshot=lambda: live.snapshot(NOW), ha_connected=lambda: True,
+    admin = AdminContext(mode=mode, snapshot=lambda: live.snapshot(now or NOW), ha_connected=lambda: True,
                          module_names=lambda: {"pv_1": "Dach"},
                          timezone=lambda: "Europe/Berlin", plant_history=history, devices=devices, test_ha=ok,
                          secrets=secrets, influx=influx)
@@ -66,7 +66,20 @@ def test_overview_shows_connection_live_values_and_the_balance(tmp_path):
     assert live["pv_1.power"]["name"] == "Dach" and live["grid.power"]["name"] is None
     assert all(m.count(".") == 1 for m in live)                                    # no strings, no detail powers
     assert live["consumption.power"]["value"] == 700.0 and live["consumption.power"]["state"] == "ok"
-    assert "balance_residual_w" in o and o["not_ok"] == []
+    assert "balance_residual_w" in o and o["not_ok"] == [] and o["problems"] == []
+
+
+def test_overview_names_the_values_without_a_valid_state_and_since_when(tmp_path):
+    """User decision 2026-11-17: the interface says which value has no valid state, why and since when (the sample
+    values were reported 3 s before the samples' time; ten minutes later they are too old)."""
+    from solar_visor_hub.plant_samples import T
+    c, *_ = hub(tmp_path, now=T + timedelta(minutes=10))
+    o = c.get("/api/overview").json()
+    p = {x["metric_id"]: x for x in o["problems"]}
+    assert p["pv_1.power"] == {"metric_id": "pv_1.power", "name": "Dach", "state": "stale", "reasons": ["report_too_old"],
+                               "since": (T - timedelta(seconds=3)).isoformat()}
+    assert p["consumption.power"]["since"] is None                  # calculated: no source of its own
+    assert o["not_ok"] == [x["metric_id"] for x in o["problems"]]
 
 
 def test_history_window_archive_and_recomputation(tmp_path):

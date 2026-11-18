@@ -16,9 +16,10 @@ Measured 2026-10-04 (11 days of HA history): while charging, power and counter c
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
+from .daycalc import SILENT_METER_LAG, SILENT_METER_WH
 from .models import MetricState
 
 POSITIVE_W = 50.0                      # below: treated as "zero" (no charging)
@@ -83,3 +84,59 @@ class ChargepointTrust:
         if ref is None or now - ref > ZERO_WINDOW:
             return MetricState.STALE, ["unconfirmed_zero"]
         return None, awaiting
+
+
+# --- grid meter (2026-11-17) ----------------------------------------------------------------------------------------
+
+# a sample of the grid power counts for at most this long (E3/DC hold of a non-zero reading in the energy history)
+GRID_POWER_HOLD = timedelta(minutes=30)
+
+
+@dataclass
+class _MeterCounter:
+    value: float
+    changed_at: datetime
+    wh: float = 0.0                     # energy of the counter's direction by the grid power since its last change
+
+
+@dataclass
+class GridMeterWatch:
+    """A grid energy counter that does not advance although the grid power says energy flows in its direction – the
+    IOmeter integration froze on 2026-11-17 and later re-reported an unchanged value. Same rule as the energy history
+    (daycalc ``SILENT_METER_WH``/``SILENT_METER_LAG``): at least that much energy by the grid power since the counter's
+    last change, and that change at least the lag ago (reason ``counter_stalled``). Fed with the signed grid power
+    (+ import) and both counters."""
+    power: float | None = None
+    power_at: datetime | None = None
+    counters: dict[str, _MeterCounter] = field(default_factory=dict)    # "import" / "export"
+
+    def _accumulate(self, until: datetime) -> dict[str, float]:
+        out: dict[str, float] = {}
+        if self.power is None or self.power_at is None:
+            return out
+        for direction, c in self.counters.items():
+            a, b = max(self.power_at, c.changed_at), min(until, self.power_at + GRID_POWER_HOLD)
+            sign = 1.0 if direction == "import" else -1.0
+            if b > a:
+                out[direction] = max(0.0, sign * self.power) * (b - a).total_seconds() / 3600.0
+        return out
+
+    def on_power(self, value: float | None, at: datetime, *, baseline: bool) -> None:
+        if not baseline:
+            for direction, wh in self._accumulate(at).items():
+                self.counters[direction].wh += wh
+        self.power, self.power_at = value, at
+
+    def on_counter(self, direction: str, value: float | None, at: datetime) -> None:
+        if value is None:
+            return                      # unknown/unavailable: the metric says so itself
+        c = self.counters.get(direction)
+        if c is None or value != c.value:
+            self.counters[direction] = _MeterCounter(value, at)
+
+    def silent_since(self, direction: str, now: datetime) -> datetime | None:
+        """The counter's last change when it should have advanced since, else None."""
+        c = self.counters.get(direction)
+        if c is None or now - c.changed_at < SILENT_METER_LAG:
+            return None
+        return c.changed_at if c.wh + self._accumulate(now).get(direction, 0.0) >= SILENT_METER_WH else None

@@ -1,10 +1,10 @@
 # Home Assistant app (formerly add-on) of the Solar Visor hub. Images: .github/workflows/release.yml
 name: Solar Visor Hub
-version: "0.5.0"
+version: "0.6.0"
 slug: solar_visor
 url: https://github.com/othorg/solar-visor-ha-hub-app
 image: ghcr.io/othorg/{arch}-solar-visor-hub
-description: Read-only hub for the Solar Visor apps (iPhone, Mac, Apple Watch)
+description: Read-only hub for the Solar Visor apps (iPhone, Mac, Apple Watch, Android)
 arch:
   - amd64
   - aarch64

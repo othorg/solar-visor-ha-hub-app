@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0
+
+- **Remote access over Home Assistant**: the new integration *Solar Visor* (in this repository, install it through HACS
+  as an *Integration*) makes the hub reachable for the apps at Home Assistant's own address,
+  `https://<your Home Assistant>/api/solar_visor` – wherever Home Assistant is reachable (Home Assistant Cloud, Tailscale
+  Funnel, your own reverse proxy). The API ports can stay off. The integration only forwards: no entities, no services,
+  the apps' device tokens remain the only authentication.
+- **Pairing from anywhere**: the pairing text (QR code, copied text) now carries a one-time invitation besides the code.
+  Over Home Assistant pairing works only with the pairing text; the 8-digit code is for typing in at home. Wrong codes,
+  invitations and watch pairings have separate limits, so a flood of wrong codes no longer blocks pairing.
+- Web interface, *Devices & diagnostics* → *Addresses for the apps*: suggests the address over Home Assistant (Home
+  Assistant Cloud, else the external URL from *Settings* → *System* → *Network*) and hints when the integration has not
+  been seen yet.
+- Texts mention the Android app.
+
 ## 0.5.0
 
 - **Full feed-in**: a PV generator whose power goes through its own meter straight into the public grid can be marked

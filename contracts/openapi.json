@@ -3654,6 +3654,19 @@
             "title": "Reasons",
             "type": "array"
           },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Since when the source shows this: its last report for 'report_too_old', else its last change (a counter that does not advance: its last value); absent when not known",
+            "title": "Since"
+          },
           "state": {
             "$ref": "#/components/schemas/MetricState"
           }
@@ -5139,7 +5152,7 @@
   },
   "info": {
     "title": "Solar Visor Hub – public read API",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "openapi": "3.1.0",
   "paths": {

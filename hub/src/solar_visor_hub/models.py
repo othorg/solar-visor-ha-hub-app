@@ -39,6 +39,17 @@ class MetricState(StrEnum):
     IMPLAUSIBLE = "implausible"
 
 
+# Reasons of a live metric's state (normalize, live, plant_live, trust): the interface and the apps give each a text
+# (contracts/ui_codes.json); "unit_mismatch:<units>" carries its units after the colon.
+METRIC_REASONS = frozenset({
+    "no_data", "unavailable", "not_numeric", "not_boolean", "non_finite", "unit_mismatch", "report_too_old",
+    "ha_disconnected", "negative_value", "percent_out_of_range", "exceeds_consumption", "unconfirmed_hold",
+    "unconfirmed_zero", "status_contradiction", "awaiting_confirmation", "input_unknown", "consumption_implausible",
+    "negative_difference", "wallbox_stale", "wallbox_implausible", "wallbox_unknown", "wallbox_assumed_zero",
+    "negative_consumption", "no_input", "counter_stalled",
+})
+
+
 class Confidence(StrEnum):
     OBSERVED = "observed"
     RECONSTRUCTED = "reconstructed"

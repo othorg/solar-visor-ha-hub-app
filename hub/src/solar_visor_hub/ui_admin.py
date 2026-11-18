@@ -17,6 +17,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from .api_v2 import problem_since
 from .config import ConfigError, SecretFiles, store_secret
 from .influx_config import InfluxConfig, InfluxConnection, TokenRequired
 from .influx_config import validate as validate_influx
@@ -98,9 +99,19 @@ def register(app: FastAPI, ctx: AdminContext) -> None:
             live = [{"metric_id": m, "name": names.get(m.split(".")[0]) if m not in OVERVIEW_METRICS else None,
                      "value": snap.metrics[m].value, "unit": snap.metrics[m].unit.value,
                      "state": snap.metrics[m].state.value, "reasons": snap.metrics[m].reasons} for m in ids]
+        # the values without a valid state, in words in the interface („IOmeter steht seit 11:23“, user decision
+        # 2026-11-17) – with the same since as the apps' diagnostics
+        problems = []
+        if snap is not None:
+            names = ctx.module_names()
+            for m, v in sorted(snap.metrics.items()):
+                if v.state.value != "ok":
+                    since = problem_since(v)
+                    problems.append({"metric_id": m, "name": names.get(m.split(".")[0]), "state": v.state.value,
+                                     "reasons": v.reasons, "since": since.isoformat() if since else None})
         return {"mode": ctx.mode, "ha_connected": ctx.ha_connected(), "timezone": ctx.timezone(), "live": live,
                 "balance_residual_w": snap.balance_residual_w if snap is not None else None,
-                "not_ok": [m for m, v in snap.metrics.items() if v.state.value != "ok"] if snap is not None else []}
+                "not_ok": [p["metric_id"] for p in problems], "problems": problems}
 
     @app.get("/api/history")
     def history() -> dict[str, Any]:

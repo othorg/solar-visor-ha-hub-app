@@ -124,7 +124,8 @@ def test_writes_need_the_csrf_header_and_json(tmp_path):
     assert r.status_code == 200
     assert r.json() == {"read_url": "https://solar.example.org", "admin_url": None,
                         "suggested_read_url": "http://homeassistant.local:8080",
-                        "suggested_admin_url": "http://homeassistant.local:8081"}
+                        "suggested_admin_url": "http://homeassistant.local:8081",
+                        "suggested_ha_url": None, "bridge_seen": False}
     assert json.loads((tmp_path / "ui.json").read_text())["addresses"]["read_url"] == "https://solar.example.org"
     assert c.get("/api/addresses", headers=h()).json()["read_url"] == "https://solar.example.org"
     bad = c.put("/api/addresses", content=json.dumps({"read_url": "javascript:alert(1)"}), headers=h(write=True))

@@ -25,7 +25,7 @@ from .models import FlowEdge, MetricState, Unit
 from .models_v2 import PlantMetric, PlantModuleStatus, PlantSnapshot, PointRole
 from .normalize import normalize
 from .plant import Kind, Plant, Point, Role
-from .trust import ChargepointTrust
+from .trust import ChargepointTrust, GridMeterWatch
 
 _STATE_RANK = {MetricState.OK: 0, MetricState.STALE: 1, MetricState.IMPLAUSIBLE: 2, MetricState.UNKNOWN: 3}
 COMPARABLE_WINDOW = timedelta(seconds=15)
@@ -36,6 +36,8 @@ DEFAULT_STALE_S: dict[Unit, int | None] = {Unit.W: 120, Unit.WH: 900, Unit.V: 90
 NEGATIVE_TOLERANCE_W = 50.0      # sensors of one moment never agree exactly: small negative sums are noise
 GENERATION, CONSUMPTION, HOME, BUS = "generation", "consumption", "home", "bus"
 OK, STALE, IMPLAUSIBLE, UNKNOWN = MetricState.OK, MetricState.STALE, MetricState.IMPLAUSIBLE, MetricState.UNKNOWN
+# grid counters the signed grid power must advance (trust.GridMeterWatch): point → direction
+GRID_COUNTERS = {"import_energy": "import", "export_energy": "export"}
 
 
 def worst(*states: MetricState) -> MetricState:
@@ -83,6 +85,8 @@ class PlantLive:
     freshness_slack_s: float = 15.0         # last_reported is only sampled every freshness interval
     discarded_events: dict[str, int] = field(default_factory=dict)     # late events per module (diagnostics)
     trust: dict[str, ChargepointTrust] = field(default_factory=dict)   # per wallbox with the retained-value check
+    # grid counters that should advance by the signed grid power (frozen meter integration, 2026-11-17)
+    meter: GridMeterWatch | None = None
     on_quality_edge: Callable[[datetime], None] | None = None
     on_observation: Callable[[str, datetime, str | None, str | None], None] | None = None
 
@@ -97,6 +101,8 @@ class PlantLive:
         for m in self.plant.active():
             if m.kind is Kind.WALLBOX and m.trust == "openwb_retained":
                 self.trust[m.id] = ChargepointTrust()
+        if "grid.power" in self._refs and any(f"grid.{p}" in self._refs for p in GRID_COUNTERS):
+            self.meter = GridMeterWatch()
 
     def subscribed_entities(self) -> list[str]:
         return sorted(self._by_entity)
@@ -138,6 +144,14 @@ class PlantLive:
     def _feed_trust(self, refs: list[_Ref], raw_state: str | None, unit: str | None, at: datetime, *,
                     baseline: bool, reset_counter: bool = False) -> None:
         for ref in refs:
+            if self.meter is not None and ref.module == "grid" and ref.point_id in ("power", *GRID_COUNTERS):
+                value = normalize(ref.point, raw_state, unit).value   # type: ignore[arg-type]
+                num = float(value) if isinstance(value, float) else None
+                if ref.point_id == "power":
+                    self.meter.on_power(num, at, baseline=baseline)
+                else:
+                    self.meter.on_counter(GRID_COUNTERS[ref.point_id], num, at)
+                continue
             trust = self.trust.get(ref.module)
             if trust is None or ref.point_id not in ("power", "energy_total"):
                 continue
@@ -248,6 +262,12 @@ class PlantLive:
 
         for wallbox_id in self.trust:
             self._apply_trust(metrics, wallbox_id, now)
+        if self.meter is not None:
+            for point_id, direction in GRID_COUNTERS.items():
+                p = metrics.get(f"grid.{point_id}")
+                if p is not None and p.state is OK and self.meter.silent_since(direction, now):
+                    metrics[f"grid.{point_id}"] = p.model_copy(update={"state": STALE,
+                                                                        "reasons": [*p.reasons, "counter_stalled"]})
 
         # total consumption: measured if the plant has the sensor, else what the bus delivers
         measured = "consumption.power" in self._refs

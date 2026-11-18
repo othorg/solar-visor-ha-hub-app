@@ -28,7 +28,7 @@ from pathlib import Path
 from typing import Protocol
 
 from . import profile
-from .daycalc import DayResult, RawSeries, SlotEnergy, compute_day, coverage, derived_slots
+from .daycalc import DayResult, RawSeries, SlotEnergy, WideSeries, compute_day, coverage, derived_slots
 from .energy import Point, merge_intervals
 from .epochs import (
     CALCULATION_VERSION,
@@ -37,6 +37,7 @@ from .epochs import (
     PIPELINE_EVIDENCE,
     SERIES,
     STATUS_LOOKBACK,
+    SeriesSpec,
     epoch_start,
     long_lookback,
     series_for,
@@ -52,6 +53,12 @@ REFRESH_TODAY = timedelta(minutes=5)
 REFRESH_RECENT = timedelta(minutes=30)
 REFRESH_POWER_TODAY = timedelta(seconds=60)
 WRITE_LATENCY = timedelta(minutes=2)   # HA → InfluxDB; later K2 adoptions invalidate on their own
+# grid meter counter intervals reaching into other days: the second meter is read this far around the window
+# (daycalc.WideSeries); a longer interval keeps its straight line
+WIDE_BEFORE = timedelta(hours=48)
+WIDE_AFTER = timedelta(hours=24)        # = the counters' look-ahead (idle_hold)
+GRID_METERS = ("grid_import_meter", "grid_export_meter")
+GRID_CROSS = ("grid_import_e3dc", "grid_export_e3dc")
 # 2: origin of the consumption (supply_* categories, energy view bars 2026-10-05). Older aggregates are rebuilt from
 # the cached slot data of the same calculation version – no recomputation from InfluxDB.
 AGGREGATE_VERSION = 2
@@ -616,6 +623,30 @@ class EnergyService:
         day, _, _ = await self._compute_full(d, profile)
         return day
 
+    async def _wide(self, specs: list[SeriesSpec], raw: dict[str, RawSeries], start: datetime, end: datetime,
+                    fetch_end: datetime) -> dict[str, WideSeries]:
+        """The grid meter's counter intervals that reach into the previous or next day (daycalc ``SILENT_METER_WH``):
+        the second meter's readings and both measurements' journal vetoes from the meter's last reading before the
+        window to its first reading after it (at most WIDE_BEFORE / WIDE_AFTER)."""
+        meters = [s for s in specs if s.kind == "counter" and s.categories[0] in GRID_METERS]
+        cross = sorted({s.measurement for s in specs if s.kind == "power" and set(s.categories) & set(GRID_CROSS)})
+        if not meters or not cross:
+            return {}
+        series = [raw.get(s.measurement, RawSeries([])) for s in meters]
+        times = [p.t for r in series for p in r.points if p.value is not None] + [r.base.t for r in series if r.base]
+        lo = max(start - WIDE_BEFORE, max((t for t in times if t < start), default=start))
+        hi = min(end + WIDE_AFTER, min((t for t in times if t >= end), default=end)) if fetch_end >= end else fetch_end
+        out: dict[str, WideSeries] = {}
+        for m in cross:
+            inside = raw.get(m, RawSeries([])).points
+            before = await self.reader.series(m, lo, start, LOOKBACK) if lo < start else [p for p in inside if p.t < start]
+            after = [p for p in await self.reader.series(m, end, hi, LOOKBACK) if p.t >= end] if hi > end else []
+            out[m] = WideSeries(lo, hi, before + [p for p in inside if p.t >= start] + after,
+                                self._invalid(m, lo, hi) if self._invalid else [])
+        for s in meters:
+            out[s.measurement] = WideSeries(lo, hi, [], self._invalid(s.measurement, lo, hi) if self._invalid else [])
+        return out
+
     async def _compute_full(self, d: date, profile: BalanceProfile) -> tuple[DayData, DayResult, tuple]:
         start, end = period_bounds("day", d)
         now = self._now()
@@ -651,7 +682,8 @@ class EnergyService:
             await asyncio.gather(*tasks, return_exceptions=True)
             raise
         slots = quarter_hours(start, end)
-        result = await asyncio.to_thread(compute_day, slots, specs, raw, invalid, fetch_end)
+        wide = await self._wide(specs, raw, start, end, fetch_end)
+        result = await asyncio.to_thread(compute_day, slots, specs, raw, invalid, fetch_end, None, wide)
         for m, (spans_from, closed_at) in result.counter_spans.items():
             # a counter interval closed inside this day began on earlier days: their cached results (computed before
             # the closing reading existed, possibly already final) must be recomputed (Codex P4 finding 5)

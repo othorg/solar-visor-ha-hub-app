@@ -81,9 +81,19 @@ signed-in user and only reads. That is why the **Solar Visor** sidebar entry is 
 administrators see a short notice there instead of the web interface. The card itself comes from the app and updates
 with it – the file in `/config/www` only loads it.
 
+## Remote access over Home Assistant (recommended)
+
+Install the integration **Solar Visor** from this repository (HACS → *Custom repositories* → this repository, type
+*Integration*), restart Home Assistant and add it under *Settings* → *Devices & services*. The apps then reach the hub
+at `https://<your Home Assistant>/api/solar_visor` – wherever Home Assistant is reachable (Home Assistant Cloud,
+Tailscale Funnel, your own reverse proxy) – and the ports below can stay off. In the web interface (*Devices &
+diagnostics* → *Addresses for the apps*) take over the suggested address, then create a pairing code and scan the QR code
+with the app: pairing with the pairing text works from anywhere.
+
 ## Ports
 
-Both ports are **off by default**. Switch them on in the *Network* section of the app only if you use the apps:
+Both ports are **off by default** and not needed with the integration above. Switch them on in the *Network* section of
+the app only for direct access in the home network:
 
 | Port | Purpose |
 |---|---|
@@ -92,7 +102,7 @@ Both ports are **off by default**. Switch them on in the *Network* section of th
 
 ## Apps
 
-The Solar Visor apps for iPhone, Apple Watch and Mac are not in the App Store. They are available on request via
+The Solar Visor apps for iPhone, Apple Watch, Mac and Android are not in the App Store or Play Store. They are available on request via
 TestFlight – please open an issue in this repository.
 
 ## Inspiration

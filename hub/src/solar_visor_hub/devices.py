@@ -1,7 +1,10 @@
 """Device tokens and one-time pairing codes (plan §4.1).
 
 - tokens: 256-bit random, only SHA-256 hashes stored, scope ``read`` or ``admin``, revocable
-- pairing codes: short-lived (10 min), single use, hashed; created via CLI on the hub host
+- pairing codes: short-lived (10 min), single use, hashed; created via CLI on the hub host or the interface
+- invitations (remote access over Home Assistant): a 192-bit secret created with each code for the pairing text;
+  redeeming the code or the invitation uses up both. Unguessable, so pairing works from anywhere without relying on
+  the client's address (plan ha-remote-access §3.1)
 - delegated tokens (P6): a paired device derives one read token per name for a companion (the watch); revoking
   the parent revokes its children, a child cannot delegate further
 """
@@ -55,6 +58,11 @@ class DeviceStore:
                     used INTEGER NOT NULL DEFAULT 0);
                 """
             )
+            pairing_columns = {r[1] for r in db.execute("PRAGMA table_info(pairing_codes)")}
+            if "invite_hash" not in pairing_columns:              # migration: invitations (remote access over HA)
+                db.execute("ALTER TABLE pairing_codes ADD COLUMN invite_hash TEXT")
+            db.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_pairing_invite ON pairing_codes (invite_hash) "
+                       "WHERE invite_hash IS NOT NULL")
             columns = {r[1] for r in db.execute("PRAGMA table_info(devices)")}
             if "parent_id" not in columns:                       # migration P6
                 db.execute("ALTER TABLE devices ADD COLUMN parent_id INTEGER REFERENCES devices(id)")
@@ -69,26 +77,40 @@ class DeviceStore:
         db.execute("PRAGMA journal_mode=WAL")
         return db
 
-    def create_pairing_code(self, scope: str = "read", now: datetime | None = None) -> str:
+    def create_pairing(self, scope: str = "read", now: datetime | None = None) -> tuple[str, str]:
+        """A pairing: ``(code, invitation)`` – the 8-digit code to type in at home, the invitation for the pairing text
+        (QR code, paste), valid from anywhere. Both expire together and redeeming one uses up the other."""
         if scope not in SCOPES:
             raise ValueError(f"scope must be one of {SCOPES}")
         now = now or datetime.now(UTC)
         code = f"{secrets.randbelow(10**8):08d}"
+        invite = secrets.token_urlsafe(24)
         with closing(self._db()) as db, db:
-            db.execute("INSERT INTO pairing_codes VALUES (?,?,?,0)", (_hash(code), scope, (now + PAIRING_TTL).isoformat()))
-        return code
+            db.execute("INSERT INTO pairing_codes (code_hash, scope, expires_at, used, invite_hash) VALUES (?,?,?,0,?)",
+                       (_hash(code), scope, (now + PAIRING_TTL).isoformat(), _hash(invite)))
+        return code, invite
 
-    def enroll(self, code: str, name: str, now: datetime | None = None) -> tuple[str, str]:
-        """Consume a pairing code and return ``(token, scope)``. The token is shown exactly once."""
+    def create_pairing_code(self, scope: str = "read", now: datetime | None = None) -> str:
+        """Only the code (CLI, tests); its invitation is never shown and expires with it."""
+        return self.create_pairing(scope, now)[0]
+
+    def enroll(self, code: str | None, name: str, now: datetime | None = None, *, invite: str | None = None) -> tuple[str, str]:
+        """Consume a pairing – by its code or by its invitation, exactly one of them – and return ``(token, scope)``.
+        The token is shown exactly once."""
+        if (code is None) == (invite is None):
+            raise PairingError("code or invitation required")
         now = now or datetime.now(UTC)
         name = (name or "Gerät").strip()[:64]
+        column, secret = ("code_hash", code) if code is not None else ("invite_hash", invite)
+        key = _hash((secret or "").strip())
         with closing(self._db()) as db, db:
-            row = db.execute("SELECT scope, expires_at, used FROM pairing_codes WHERE code_hash=?", (_hash(code.strip()),)).fetchone()
+            row = db.execute(f"SELECT scope, expires_at, used, code_hash FROM pairing_codes WHERE {column}=?",
+                             (key,)).fetchone()
             if not row or row[2] or datetime.fromisoformat(row[1]) < now:
                 raise PairingError("invalid or expired pairing code")
             scope = row[0]
-            consumed = db.execute("UPDATE pairing_codes SET used=1 WHERE code_hash=? AND used=0", (_hash(code.strip()),))
-            if consumed.rowcount != 1:  # concurrent enroll already consumed this code
+            consumed = db.execute("UPDATE pairing_codes SET used=1 WHERE code_hash=? AND used=0", (row[3],))
+            if consumed.rowcount != 1:  # concurrent enroll already consumed this pairing
                 raise PairingError("invalid or expired pairing code")
             token = secrets.token_urlsafe(32)
             db.execute("INSERT INTO devices (name, scope, token_hash, created_at) VALUES (?,?,?,?)",
