@@ -1,12 +1,13 @@
 // The card's flow diagram – the app dashboard (ios/SharedApp/DashboardView.swift) in SVG: wires, glowing node rings,
-// symbols with value and detail, energy balls in their source colour; reduced motion → direction chevrons. Static parts
-// are redrawn per snapshot, only the balls per animation frame (paused when nothing flows or the card is not visible).
+// symbols with value and detail, the battery's SOC ring, energy balls in their source colour; reduced motion → direction
+// chevrons. Static parts are redrawn per snapshot, only the balls per animation frame (paused when nothing flows or the
+// card is not visible).
 import { hasStaleInput, inputsFromSnapshot } from "./allocation";
 import { FlowAnimator, flowWires, SPEED } from "./animation";
 import { iconMarkup, type Level } from "./icons";
 import { EdgeGeometry, FlowLayout, isJunction, type FlowNode, type Point } from "./layout";
 import type { PlantSnapshot } from "./model";
-import { COLORS, edgeColor, nodeColor, sourceColor, type Theme } from "./palette";
+import { COLORS, edgeColor, nodeColor, socColor, socLitSegments, sourceColor, type Theme } from "./palette";
 import { glowLevel, nodeText, readingOrder, usableSoc } from "./presentation";
 import type { CardSensor } from "./api";
 import type { CardState } from "./panel";
@@ -239,6 +240,8 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
                                    "stroke-width": 4 + 4 * g, filter: `url(#${glow})` }));
       gNodes.append(el("circle", { cx: x, cy: y, r, style: "fill: var(--sv-paper)", stroke: color, "stroke-opacity": op,
                                    "stroke-width": isJunction(node.role) ? 3 : 2.5 }));
+      // segmented SOC ring inside the contour, besides the symbol's fill level (user decision 2026-11-22)
+      if (node.role.kind === "battery") socRing(node.center, r - 9, 4, usableSoc(snapshot, `${node.id}.soc`), stale);
       labels(node, topology, snapshot, stale, t);
     }
 
@@ -269,6 +272,25 @@ export function createView(root: ShadowRoot, t0: Texts, onNode: (id: string) => 
     const f = el("filter", { id, x: "-100%", y: "-100%", width: "300%", height: "300%" });
     f.append(el("feGaussianBlur", { stdDeviation: (blur / 2).toFixed(2) }));
     return f;
+  }
+
+  /** Segmented SOC ring (the app's drawSOCRing): 270° open at the bottom, colour by arc position, lit up to the SOC. */
+  function socRing(center: Point, radius: number, width: number, soc: number | null, dimmed: boolean,
+                   segments = 36): void {
+    const start = 135, sweep = 270, gap = 2.2, seg = sweep / segments;
+    const lit = socLitSegments(soc, segments);
+    const at = (deg: number) => {
+      const a = (deg * Math.PI) / 180;
+      return `${(center.x + radius * Math.cos(a)).toFixed(2)},${(center.y + radius * Math.sin(a)).toFixed(2)}`;
+    };
+    const ring = el("g", { class: "sv-soc" });
+    for (let i = 0; i < segments; i++) {
+      const a0 = start + i * seg + gap / 2;
+      ring.append(el("path", { d: `M${at(a0)}A${radius.toFixed(2)},${radius.toFixed(2)} 0 0 1 ${at(a0 + seg - gap)}`,
+                               fill: "none", stroke: socColor(i / (segments - 1)), "stroke-width": width,
+                               "stroke-opacity": (i < lit ? 1 : 0.16) * (dimmed ? 0.5 : 1) }));
+    }
+    gNodes.append(ring);
   }
 
   function chevrons(geo: EdgeGeometry, forward: boolean, power: number, color: string): void {

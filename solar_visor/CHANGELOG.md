@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Dashboard card and the web interface's overview: the battery shows its state of charge as a segmented ring inside
+  its circle (red to green, lit up to the current level) in addition to the fill level of the battery symbol – as in
+  the Solar Visor apps.
+
 ## 0.6.0
 
 - **Remote access over Home Assistant**: the new integration *Solar Visor* (in this repository, install it through HACS

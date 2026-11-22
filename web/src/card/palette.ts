@@ -102,3 +102,9 @@ export function socColor(position: number): string {
   }
   return `rgb(${rgb.map((v) => Math.round(v * 255)).join(",")})`;
 }
+
+/** Lit segments of the SOC ring for a SOC in percent (SOCGauge.litSegments): rounded down, unknown lights none. */
+export function socLitSegments(soc: number | null, segments: number): number {
+  if (soc === null || !Number.isFinite(soc)) return 0;
+  return Math.floor((Math.min(Math.max(soc, 0), 100) / 100) * segments);
+}
